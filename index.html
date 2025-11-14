@@ -440,7 +440,7 @@
     <div class="flex-row">
       <div class="flex-grow">
         <h3>Spieler-Login</h3>
-        <p class="small-text">Panther-Code eingeben (z.B. U13-01). Beim ersten Mal wird der Name abgefragt.</p>
+        <p class="small-text">Panther-Code eingeben (z.B. U13-01). Beim ersten Mal werden Name & Jahrgang abgefragt.</p>
         <label>Panther-Code</label>
         <input type="text" id="loginCode" placeholder="U13-01">
         <button id="loginBtn">Einloggen</button>
@@ -837,6 +837,8 @@
           <tr>
             <th>Code</th>
             <th>Name</th>
+            <th>Jahrg.</th>
+            <th>Gruppe</th>
             <th>Km</th>
             <th>Stabi</th>
             <th>XP</th>
@@ -923,7 +925,7 @@ const DEFAULT_GOAL = 80;
 
 /* Challenge-Ende und Duell-Regeln */
 const CHALLENGE_END_DATE = "2026-02-02";
-const MAX_DUEL_DAYS = 7; // max. 7 Tage (0–6 Differenz)
+const MAX_DUEL_DAYS = 7; // max. 7 Tage
 const MAX_PENDING_DUELS_PER_PLAYER = 3;
 
 /* XP-System */
@@ -964,6 +966,20 @@ function daysBetweenStr(startStr, endStr){
   return daysBetween(a,b);
 }
 
+/* ===== Gruppe aus Jahrgang ===== */
+function getGroupFromBirthYear(year){
+  if(!year) return null;
+  if(year === 2012 || year === 2013) return "black"; // Alt
+  if(year === 2014 || year === 2015) return "white"; // Jung
+  return null;
+}
+
+function getGroupLabel(group){
+  if(group === "black") return "Alt (Black)";
+  if(group === "white") return "Jung (White)";
+  return "";
+}
+
 /* ===== XP-Tier ===== */
 function getXpTier(xp){
   if(xp >= 800) return {emoji:"🟡", name:"Gold"};
@@ -984,25 +1000,70 @@ async function loginWithCode(){
   try {
     let doc = await db.collection("players").doc(code).get();
     if(!doc.exists){
+      // Neuer Spieler: Name + Jahrgang abfragen
       let name = prompt("Neuer Panther-Code. Name eingeben:");
       if(!name){
         msg.textContent="Keine Eingabe.";
         return;
       }
+      let birthYearStr = prompt("Bitte deinen Jahrgang wählen (2012, 2013, 2014 oder 2015):");
+      let birthYear = parseInt(birthYearStr,10);
+      if(![2012,2013,2014,2015].includes(birthYear)){
+        msg.textContent = "Ungültiger Jahrgang. Gültig sind 2012, 2013, 2014 oder 2015.";
+        return;
+      }
+      const group = getGroupFromBirthYear(birthYear);
+
       await db.collection("players").doc(code).set({
-        code, name,
+        code,
+        name,
+        birthYear,
+        group,
         totalKm:0,
         stabiCount:0,
         goalKm: DEFAULT_GOAL,
         xp: 0,
         avatarStyle: "basic"
       });
-      currentPlayer = { code, name, totalKm:0, stabiCount:0, goalKm:DEFAULT_GOAL, xp:0, avatarStyle:"basic" };
+      currentPlayer = {
+        code,
+        name,
+        birthYear,
+        group,
+        totalKm:0,
+        stabiCount:0,
+        goalKm:DEFAULT_GOAL,
+        xp:0,
+        avatarStyle:"basic"
+      };
     } else {
       currentPlayer = doc.data();
       if(currentPlayer.xp === undefined) currentPlayer.xp = 0;
       if(currentPlayer.goalKm === undefined) currentPlayer.goalKm = DEFAULT_GOAL;
       if(!currentPlayer.avatarStyle) currentPlayer.avatarStyle = "basic";
+
+      // Falls Jahrgang fehlt: einmalig nachholen
+      if(currentPlayer.birthYear === undefined){
+        let birthYearStr = prompt("Bitte einmal deinen Jahrgang eingeben (2012, 2013, 2014 oder 2015):");
+        let birthYear = parseInt(birthYearStr,10);
+        if(![2012,2013,2014,2015].includes(birthYear)){
+          msg.textContent = "Ungültiger Jahrgang. Login abgebrochen.";
+          return;
+        }
+        const group = getGroupFromBirthYear(birthYear);
+        await db.collection("players").doc(code).update({
+          birthYear,
+          group
+        });
+        currentPlayer.birthYear = birthYear;
+        currentPlayer.group = group;
+      } else if(!currentPlayer.group){
+        const group = getGroupFromBirthYear(currentPlayer.birthYear);
+        if(group){
+          await db.collection("players").doc(code).update({ group });
+          currentPlayer.group = group;
+        }
+      }
     }
 
     localStorage.setItem("panther_code", code);
@@ -1414,6 +1475,9 @@ async function refreshDashboard(){
     if(p.xp === undefined) p.xp = 0;
     if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
     if(!p.avatarStyle) p.avatarStyle = "basic";
+    if(p.birthYear && !p.group){
+      p.group = getGroupFromBirthYear(p.birthYear);
+    }
     teamKm += p.totalKm || 0;
     players.push(p);
   });
@@ -1422,7 +1486,12 @@ async function refreshDashboard(){
   if(me){ currentPlayer = me; }
 
   $("welcomeText").textContent = "Servus, " + currentPlayer.name + " 🐾";
-  $("playerCodeLabel").textContent = "Code: " + currentPlayer.code;
+
+  let groupLabel = getGroupLabel(currentPlayer.group);
+  let extraInfo = "";
+  if(currentPlayer.birthYear) extraInfo += " · Jahrgang " + currentPlayer.birthYear;
+  if(groupLabel) extraInfo += " · Gruppe: " + groupLabel;
+  $("playerCodeLabel").textContent = "Code: " + currentPlayer.code + extraInfo;
 
   const km = currentPlayer.totalKm || 0;
   const goal = currentPlayer.goalKm || DEFAULT_GOAL;
@@ -1664,17 +1733,21 @@ async function loadCoachView(){
   const tbody = $("coachPlayersBody");
   const msg = $("coachActionMessage");
   msg.textContent = "";
-  tbody.innerHTML = "<tr><td colspan='6'>Lade Spieler...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='8'>Lade Spieler...</td></tr>";
   hide("coachEntriesCard");
 
   try {
     const snap = await db.collection("players").get();
     let players = [];
     snap.forEach(doc=>{
-      const p = doc.data();
+      const pRaw = doc.data();
+      const p = {...pRaw};
       if(p.xp === undefined) p.xp = 0;
       if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
       if(!p.avatarStyle) p.avatarStyle = "basic";
+      if(p.birthYear && !p.group){
+        p.group = getGroupFromBirthYear(p.birthYear);
+      }
       players.push(p);
     });
 
@@ -1700,10 +1773,15 @@ async function loadCoachView(){
     players.forEach(p=>{
       const xp = p.xp || 0;
       const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
+      const birthYear = p.birthYear || "";
+      const groupLabel = getGroupLabel(p.group);
+
       rows.push(`
         <tr data-code="${p.code}" data-name="${p.name}">
           <td>${p.code}</td>
           <td>${p.name}${suspiciousMark}</td>
+          <td>${birthYear}</td>
+          <td>${groupLabel}</td>
           <td>${(p.totalKm||0).toFixed(1)}</td>
           <td>${p.stabiCount||0}</td>
           <td>${xp}</td>
@@ -1717,14 +1795,14 @@ async function loadCoachView(){
       `);
     });
 
-    tbody.innerHTML = rows.join("") || "<tr><td colspan='6'>Keine Spieler vorhanden.</td></tr>";
+    tbody.innerHTML = rows.join("") || "<tr><td colspan='8'>Keine Spieler vorhanden.</td></tr>";
     await loadChallengeSummary();
     await loadCoachAwardSummary();
     await loadTeamQuestSummary();
     await loadDuelAdminList();
   } catch(e){
     console.error(e);
-    tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='8'>Fehler beim Laden.</td></tr>";
   }
 }
 
@@ -1843,16 +1921,18 @@ $("coachExportBtn").onclick = async ()=>{
   try {
     const snap = await db.collection("players").get();
     let rows = [];
-    rows.push("code;name;km;stabi;xp");
+    rows.push("code;name;birthYear;group;km;stabi;xp");
 
     snap.forEach(doc=>{
       const p = doc.data();
       const code = p.code || doc.id;
       const name = (p.name || "").replace(/;/g, ",");
+      const birthYear = p.birthYear || "";
+      const group = p.group || "";
       const km = (p.totalKm || 0).toFixed(1).replace(".", ",");
       const stabi = p.stabiCount || 0;
       const xp = p.xp || 0;
-      rows.push([code, name, km, stabi, xp].join(";"));
+      rows.push([code, name, birthYear, group, km, stabi, xp].join(";");
     });
 
     const csvContent = rows.join("\n");
@@ -2134,1063 +2214,4 @@ $("challengeSaveBtn").onclick = async ()=>{
 
   if(!title || !start || !end || targetKm <= 0){
     msg.textContent = "Challenge: Titel, Zeitraum und Ziel-km nötig.";
-    return;
-  }
-
-  try {
-    await db.collection("challenges").doc("current").set({
-      title,
-      startDate: start,
-      endDate: end,
-      targetKm,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    msg.textContent = "Challenge gespeichert.";
-    await loadChallengeSummary();
-  } catch(e){
-    console.error(e);
-    msg.textContent = "Fehler beim Speichern der Challenge.";
-  }
-};
-
-$("challengeLoadBtn").onclick = async ()=>{
-  await loadChallengeSummary(true);
-};
-
-async function loadChallengeSummary(fillForm=false){
-  const summary = $("coachChallengeSummary");
-  try {
-    const doc = await db.collection("challenges").doc("current").get();
-    if(!doc.exists){
-      summary.textContent = "Keine Challenge gesetzt.";
-      if(fillForm){
-        $("challengeTitleInput").value = "";
-        $("challengeStartInput").value = "";
-        $("challengeEndInput").value = "";
-        $("challengeTargetKmInput").value = "";
-      }
-      return;
-    }
-    const c = doc.data();
-    summary.textContent = `Aktuelle Challenge: "${c.title}" – ${c.startDate} bis ${c.endDate}, Ziel: ${c.targetKm} km pro Spieler.`;
-    if(fillForm){
-      $("challengeTitleInput").value = c.title || "";
-      $("challengeStartInput").value = c.startDate || "";
-      $("challengeEndInput").value = c.endDate || "";
-      $("challengeTargetKmInput").value = c.targetKm || "";
-    }
-  } catch(e){
-    console.error(e);
-    summary.textContent = "Fehler beim Laden der Challenge.";
-  }
-}
-
-/* ===== CHALLENGE – SPIELER ===== */
-async function loadCurrentChallengeForPlayer(){
-  const titleEl = $("challengeTitle");
-  const periodEl = $("challengePeriod");
-  const progTextEl = $("challengeProgressText");
-  const fillEl = $("challengeProgressFill");
-  const msgEl = $("challengeMessage");
-
-  msgEl.textContent = "";
-  titleEl.textContent = "Keine Challenge aktiv";
-  periodEl.textContent = "";
-  progTextEl.textContent = "";
-  fillEl.style.width = "0%";
-
-  try {
-    const doc = await db.collection("challenges").doc("current").get();
-    if(!doc.exists){
-      msgEl.textContent = "Derzeit ist keine Challenge eingestellt.";
-      return;
-    }
-    const c = doc.data();
-    titleEl.textContent = c.title || "Challenge";
-    periodEl.textContent = `Zeitraum: ${c.startDate} bis ${c.endDate}`;
-    const targetKm = c.targetKm || 0;
-
-    if(!currentPlayer){
-      progTextEl.textContent = "";
-      return;
-    }
-
-    const start = c.startDate;
-    const end = c.endDate;
-
-    const runsSnap = await db.collection("runs")
-      .where("playerCode","==",currentPlayer.code)
-      .where("date",">=",start)
-      .where("date","<=",end)
-      .get();
-
-    let sumKm = 0;
-    runsSnap.forEach(d=>{
-      const r = d.data();
-      sumKm += r.km || 0;
-    });
-
-    const pct = targetKm > 0 ? Math.min(100, (sumKm/targetKm)*100) : 0;
-    fillEl.style.width = pct + "%";
-    progTextEl.textContent = `Dein Fortschritt: ${sumKm.toFixed(1)} / ${targetKm.toFixed(1)} km (${pct.toFixed(0)}%)`;
-
-    const today = todayDateString();
-    if(today < start || today > end){
-      msgEl.textContent = "Hinweis: du bist außerhalb des Challenge-Zeitraums.";
-    }
-  } catch(e){
-    console.error(e);
-    msgEl.textContent = "Fehler beim Laden der Challenge.";
-  }
-}
-
-/* ===== AKTIVITÄTS-FEED ===== */
-async function loadActivityFeed(){
-  const container = $("activityFeed");
-  container.innerHTML = "<div class='small-text'>Lade Aktivitäten...</div>";
-
-  try {
-    const playersSnap = await db.collection("players").get();
-    const nameMap = {};
-    playersSnap.forEach(doc=>{
-      const p = doc.data();
-      nameMap[p.code] = p.name || p.code;
-    });
-
-    const runsSnap = await db.collection("runs")
-      .orderBy("createdAt","desc")
-      .limit(20)
-      .get();
-
-    const stabiSnap = await db.collection("stabiSessions")
-      .orderBy("createdAt","desc")
-      .limit(20)
-      .get();
-
-    const items = [];
-
-    runsSnap.forEach(doc=>{
-      const d = doc.data();
-      items.push({
-        type: "run",
-        playerCode: d.playerCode,
-        playerName: nameMap[d.playerCode] || d.playerCode,
-        date: d.date,
-        km: d.km || 0,
-        rounds: null,
-        suspicious: !!d.suspicious,
-        createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
-      });
-    });
-
-    stabiSnap.forEach(doc=>{
-      const d = doc.data();
-      items.push({
-        type: "stabi",
-        playerCode: d.playerCode,
-        playerName: nameMap[d.playerCode] || d.playerCode,
-        date: d.date,
-        km: null,
-        rounds: d.rounds || 1,
-        suspicious: !!d.suspicious,
-        createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
-      });
-    });
-
-    items.sort((a,b)=> b.createdAt - a.createdAt);
-    const latest = items.slice(0,20);
-
-    if(latest.length === 0){
-      container.innerHTML = "<div class='small-text'>Noch keine Aktivitäten.</div>";
-      return;
-    }
-
-    container.innerHTML = "";
-    latest.forEach(item=>{
-      const div = document.createElement("div");
-      div.className = "activity-item";
-
-      const icon = item.type === "run" ? "🏃‍♂️" : "💪";
-      const warn = item.suspicious ? " ⚠" : "";
-      const mainText = item.type === "run"
-        ? `${item.playerName} ist ${item.km.toFixed(1)} km gelaufen.${warn}`
-        : `${item.playerName} hat Stabi gemacht (${item.rounds} Runde(n)).${warn}`;
-
-      const dateText = item.date || "";
-
-      div.innerHTML = `
-        <div class="activity-main">
-          <div>${icon} ${mainText}</div>
-          <div class="activity-type">${dateText}</div>
-        </div>
-      `;
-
-      container.appendChild(div);
-    });
-
-  } catch(e){
-    console.error(e);
-    container.innerHTML = "<div class='small-text'>Fehler beim Laden der Aktivitäten.</div>";
-  }
-}
-
-$("refreshFeedBtn").onclick = loadActivityFeed;
-
-/* ===== DUELLE – COACH SEITE ===== */
-$("duelSaveBtn").onclick = async ()=>{
-  const a = $("duelPlayerAInput").value.trim().toUpperCase();
-  const b = $("duelPlayerBInput").value.trim().toUpperCase();
-  const type = $("duelTypeInput").value;
-  const start = $("duelStartInput").value;
-  const end = $("duelEndInput").value;
-  const msg = $("duelAdminMessage");
-
-  if(!a || !b || !start || !end || a === b){
-    msg.textContent = "Daten unvollständig oder Spieler gleich.";
-    return;
-  }
-  if(start > end){
-    msg.textContent = "Startdatum darf nicht nach Enddatum liegen.";
-    return;
-  }
-  if(end > CHALLENGE_END_DATE){
-    msg.textContent = "Enddatum darf nicht nach 02.02.2026 liegen.";
-    return;
-  }
-  const diff = daysBetweenStr(start,end);
-  if(diff < 0 || diff >= MAX_DUEL_DAYS){
-    msg.textContent = "Ein Duell darf maximal 7 Tage dauern.";
-    return;
-  }
-
-  try {
-    await db.collection("duels").add({
-      playerA: a,
-      playerB: b,
-      type,
-      startDate: start,
-      endDate: end,
-      rewardText: null,
-      status: "active",
-      createdBy: "coach",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    msg.textContent = "Duell gespeichert.";
-    $("duelPlayerAInput").value = "";
-    $("duelPlayerBInput").value = "";
-    $("duelStartInput").value = "";
-    $("duelEndInput").value = "";
-    await loadDuelAdminList();
-  } catch(e){
-    console.error(e);
-    msg.textContent = "Fehler beim Speichern des Duells.";
-  }
-};
-
-async function loadDuelAdminList(){
-  const box = $("duelAdminList");
-  box.textContent = "Lade Duelle...";
-  try {
-    const snap = await db.collection("duels")
-      .orderBy("createdAt","desc")
-      .limit(30)
-      .get();
-    if(snap.empty){
-      box.textContent = "Keine Duelle angelegt.";
-      return;
-    }
-    const items = [];
-    snap.forEach(doc=>{
-      const d = doc.data();
-      items.push({id:doc.id, ...d});
-    });
-    box.innerHTML = "";
-    items.forEach(d=>{
-      const div = document.createElement("div");
-      div.className = "duel-card-admin";
-      div.dataset.id = d.id;
-      div.dataset.playerA = d.playerA;
-      div.dataset.playerB = d.playerB;
-      div.dataset.type = d.type || "km";
-      div.dataset.start = d.startDate || "";
-      div.dataset.end = d.endDate || "";
-      div.dataset.status = d.status || "active";
-
-      const typeText = d.type === "stabi" ? "Stabi" : "km";
-      const status = d.status || "active";
-      const reward = d.rewardText ? ` · Belohnung: ${d.rewardText}` : "";
-
-      let statusLine = `Status: ${status}`;
-      if(status === "finished"){
-        if(d.draw){
-          statusLine += " (Unentschieden)";
-        } else if(d.winnerName){
-          const val = typeof d.winnerValue === "number"
-            ? (d.type === "km" ? d.winnerValue.toFixed(1) + " km" : d.winnerValue + " Stabi")
-            : "";
-          statusLine += ` · Gewinner: ${d.winnerName}${val ? " ("+val+")" : ""}`;
-        }
-      }
-
-      div.innerHTML = `
-        <div><strong>${d.playerA} vs ${d.playerB}</strong> · ${typeText} · ${d.startDate} bis ${d.endDate}${reward}</div>
-        <div class="small-text">${statusLine}</div>
-        <div style="margin-top:4px;">
-          ${status === "active" ? '<button class="entry-btn entry-edit duel-finish-btn">Duell beenden</button>' : ''}
-          <button class="entry-btn entry-delete duel-delete-btn">Löschen</button>
-        </div>
-      `;
-      box.appendChild(div);
-    });
-  } catch(e){
-    console.error(e);
-    box.textContent = "Fehler beim Laden der Duelle.";
-  }
-}
-
-/* Coach-Duell-Actions (beenden / löschen) */
-$("duelAdminList").addEventListener("click", async (e)=>{
-  const btn = e.target;
-  const card = btn.closest(".duel-card-admin");
-  if(!card) return;
-  const id = card.dataset.id;
-  const status = card.dataset.status;
-  const playerA = card.dataset.playerA;
-  const playerB = card.dataset.playerB;
-  const type = card.dataset.type;
-  const start = card.dataset.start;
-  const end = card.dataset.end;
-  const msg = $("duelAdminMessage");
-
-  if(btn.classList.contains("duel-finish-btn")){
-    if(status !== "active"){
-      msg.textContent = "Dieses Duell ist nicht mehr aktiv.";
-      return;
-    }
-    if(!confirm("Duell jetzt beenden und Gewinner fixieren?")) return;
-    try {
-      await finishDuelAsCoach(id, playerA, playerB, type, start, end);
-      await loadDuelAdminList();
-      await loadDuelsForPlayer(); // falls Coach auch Spieler ist und eingeloggt war
-    } catch(e){
-      console.error(e);
-      msg.textContent = "Fehler beim Beenden des Duells.";
-    }
-  }
-
-  if(btn.classList.contains("duel-delete-btn")){
-    if(!confirm("Dieses Duell wirklich löschen?")) return;
-    try {
-      await db.collection("duels").doc(id).delete();
-      msg.textContent = "Duell gelöscht.";
-      await loadDuelAdminList();
-    } catch(e){
-      console.error(e);
-      msg.textContent = "Fehler beim Löschen des Duells.";
-    }
-  }
-});
-
-async function finishDuelAsCoach(duelId, playerA, playerB, type, startDate, endDate){
-  const msg = $("duelAdminMessage");
-  let aVal = 0;
-  let bVal = 0;
-
-  if(!startDate || !endDate){
-    msg.textContent = "Duell hat kein gültiges Datum.";
-    return;
-  }
-
-  try {
-    if(type === "km"){
-      const runsA = await db.collection("runs")
-        .where("playerCode","==",playerA)
-        .where("date",">=",startDate)
-        .where("date","<=",endDate)
-        .get();
-      runsA.forEach(doc=>{
-        const d = doc.data();
-        aVal += d.km || 0;
-      });
-
-      const runsB = await db.collection("runs")
-        .where("playerCode","==",playerB)
-        .where("date",">=",startDate)
-        .where("date","<=",endDate)
-        .get();
-      runsB.forEach(doc=>{
-        const d = doc.data();
-        bVal += d.km || 0;
-      });
-    } else {
-      const stA = await db.collection("stabiSessions")
-        .where("playerCode","==",playerA)
-        .where("date",">=",startDate)
-        .where("date","<=",endDate)
-        .get();
-      stA.forEach(()=>{ aVal += 1; });
-
-      const stB = await db.collection("stabiSessions")
-        .where("playerCode","==",playerB)
-        .where("date",">=",startDate)
-        .where("date","<=",endDate)
-        .get();
-      stB.forEach(()=>{ bVal += 1; });
-    }
-
-    const ref = db.collection("duels").doc(duelId);
-
-    if(aVal === bVal){
-      await ref.update({
-        status: "finished",
-        draw: true,
-        winnerCode: null,
-        winnerName: null,
-        winnerValue: null,
-        loserCode: null,
-        loserName: null,
-        loserValue: null,
-        finishedBy: currentCoachName || null,
-        finishedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      msg.textContent = "Duell als Unentschieden abgeschlossen.";
-      return;
-    }
-
-    const winnerCode = aVal > bVal ? playerA : playerB;
-    const loserCode  = aVal > bVal ? playerB : playerA;
-    const winnerVal  = aVal > bVal ? aVal : bVal;
-    const loserVal   = aVal > bVal ? bVal : aVal;
-
-    const [docA, docB] = await Promise.all([
-      db.collection("players").doc(playerA).get(),
-      db.collection("players").doc(playerB).get()
-    ]);
-    const nameA = docA.exists ? (docA.data().name || playerA) : playerA;
-    const nameB = docB.exists ? (docB.data().name || playerB) : playerB;
-
-    const winnerName = winnerCode === playerA ? nameA : nameB;
-    const loserName  = loserCode === playerA ? nameA : nameB;
-
-    await ref.update({
-      status: "finished",
-      draw: false,
-      winnerCode,
-      winnerName,
-      winnerValue: winnerVal,
-      loserCode,
-      loserName,
-      loserValue: loserVal,
-      finishedBy: currentCoachName || null,
-      finishedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    msg.textContent = `Duell beendet. Gewinner: ${winnerName}.`;
-  } catch(e){
-    console.error(e);
-    msg.textContent = "Fehler bei der Auswertung des Duells.";
-  }
-}
-
-/* ===== SPIELER: GEGNERLISTE FÜR DUELL ===== */
-async function loadPlayersForDuelSelect(){
-  const select = $("duelOpponentSelect");
-  if(!select || !currentPlayer) return;
-  try {
-    const snap = await db.collection("players").get();
-    const list = [];
-    snap.forEach(doc=>{
-      const p = doc.data();
-      if(p.code !== currentPlayer.code){
-        list.push(p);
-      }
-    });
-    list.sort((a,b)=> (a.name || a.code).localeCompare(b.name || b.code, "de"));
-    select.innerHTML = "";
-    if(list.length === 0){
-      const opt = document.createElement("option");
-      opt.value = "";
-      opt.textContent = "Keine anderen Spieler vorhanden";
-      select.appendChild(opt);
-      select.disabled = true;
-      return;
-    }
-    select.disabled = false;
-    list.forEach(p=>{
-      const opt = document.createElement("option");
-      opt.value = p.code;
-      opt.textContent = `${p.name || p.code} (${p.code})`;
-      select.appendChild(opt);
-    });
-  } catch(e){
-    console.error(e);
-  }
-}
-
-/* ===== SPIELER: DUELL-ANFRAGE ERSTELLEN ===== */
-$("duelCreateBtn").onclick = createDuelRequest;
-
-async function createDuelRequest(){
-  const msg = $("duelPlayerMessage");
-  msg.textContent = "";
-  if(!currentPlayer){
-    msg.textContent = "Fehler: kein Spieler geladen.";
-    return;
-  }
-
-  const opp = $("duelOpponentSelect").value;
-  const type = $("duelTypePlayerInput").value;
-  const rewardRaw = $("duelRewardInput").value.trim();
-  const end = $("duelEndPlayerInput").value;
-  const today = todayDateString();
-
-  if(!opp){
-    msg.textContent = "Bitte einen Gegner auswählen.";
-    return;
-  }
-  if(today > CHALLENGE_END_DATE){
-    msg.textContent = "Die Challenge ist fast zu Ende – neue Duelle sind nicht mehr möglich.";
-    return;
-  }
-  if(!end){
-    msg.textContent = "Bitte ein Enddatum wählen.";
-    return;
-  }
-  if(end > CHALLENGE_END_DATE){
-    msg.textContent = "Enddatum darf nicht nach 02.02.2026 liegen.";
-    return;
-  }
-  if(end < today){
-    msg.textContent = "Enddatum darf nicht in der Vergangenheit liegen.";
-    return;
-  }
-
-  const diff = daysBetweenStr(today, end);
-  if(diff < 0 || diff >= MAX_DUEL_DAYS){
-    msg.textContent = "Ein Duell darf maximal 7 Tage dauern.";
-    return;
-  }
-
-  let rewardText = rewardRaw;
-  if(rewardText.length > 100){
-    rewardText = rewardText.slice(0,100);
-  }
-
-  try {
-    const pendSnap = await db.collection("duels")
-      .where("createdBy","==",currentPlayer.code)
-      .where("status","==","pending")
-      .get();
-    if(pendSnap.size >= MAX_PENDING_DUELS_PER_PLAYER){
-      msg.textContent = "Du hast bereits zu viele offene Duell-Anfragen.";
-      return;
-    }
-
-    await db.collection("duels").add({
-      playerA: currentPlayer.code,
-      playerB: opp,
-      type,
-      startDate: today,
-      endDate: end,
-      rewardText: rewardText || null,
-      status: "pending",
-      createdBy: currentPlayer.code,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    msg.textContent = "Duell-Anfrage wurde gesendet.";
-    $("duelRewardInput").value = "";
-    setupDuelEndInputLimits();
-    await loadDuelsForPlayer();
-    await loadIncomingDuelsForPlayer();
-    await loadDuelAdminList();
-  } catch(e){
-    console.error(e);
-    msg.textContent = "Fehler beim Senden der Duell-Anfrage.";
-  }
-}
-
-/* ===== SPIELER: DUELLE-ANSICHT ===== */
-async function loadDuelsForPlayer(){
-  const box = $("duelContainer");
-  if(!currentPlayer){
-    box.textContent = "Keine aktiven Duelle.";
-    return;
-  }
-  const code = currentPlayer.code;
-  const today = todayDateString();
-
-  try {
-    const snapA = await db.collection("duels")
-      .where("playerA","==",code).get();
-    const snapB = await db.collection("duels")
-      .where("playerB","==",code).get();
-
-    const duels = [];
-    snapA.forEach(doc=> duels.push({id:doc.id, ...doc.data()}));
-    snapB.forEach(doc=> duels.push({id:doc.id, ...doc.data()}));
-
-    const activeDuels = duels.filter(d=>{
-      const status = d.status || "active";
-      if(status !== "active") return false;
-      if(!d.startDate || !d.endDate) return false;
-      if(today < d.startDate || today > d.endDate) return false;
-      return true;
-    });
-
-    if(activeDuels.length === 0){
-      box.textContent = "Keine aktiven Duelle.";
-      return;
-    }
-
-    const playersSnap = await db.collection("players").get();
-    const nameMap = {};
-    playersSnap.forEach(doc=>{
-      const p = doc.data();
-      nameMap[p.code] = p.name || p.code;
-    });
-
-    box.innerHTML = "";
-    for(const d of activeDuels){
-      const otherCode = d.playerA === code ? d.playerB : d.playerA;
-      const myCode = code;
-      const type = d.type || "km";
-      const reward = d.rewardText || "keine festgelegte Belohnung";
-
-      let myVal = 0;
-      let otherVal = 0;
-
-      if(type === "km"){
-        const runsMy = await db.collection("runs")
-          .where("playerCode","==",myCode)
-          .where("date",">=",d.startDate)
-          .where("date","<=",d.endDate)
-          .get();
-        runsMy.forEach(doc=>{
-          const r = doc.data();
-          myVal += r.km || 0;
-        });
-
-        const runsOther = await db.collection("runs")
-          .where("playerCode","==",otherCode)
-          .where("date",">=",d.startDate)
-          .where("date","<=",d.endDate)
-          .get();
-        runsOther.forEach(doc=>{
-          const r = doc.data();
-          otherVal += r.km || 0;
-        });
-      } else {
-        const stMy = await db.collection("stabiSessions")
-          .where("playerCode","==",myCode)
-          .where("date",">=",d.startDate)
-          .where("date","<=",d.endDate)
-          .get();
-        stMy.forEach(doc=>{ myVal += 1; });
-
-        const stOther = await db.collection("stabiSessions")
-          .where("playerCode","==",otherCode)
-          .where("date",">=",d.startDate)
-          .where("date","<=",d.endDate)
-          .get();
-        stOther.forEach(doc=>{ otherVal += 1; });
-      }
-
-      const div = document.createElement("div");
-      div.className = "duel-card";
-      const typeText = type === "stabi" ? "Stabi" : "km";
-      const myName = nameMap[myCode] || myCode;
-      const otherName = nameMap[otherCode] || otherCode;
-
-      let status = "";
-      if(myVal > otherVal) status = "Du führst.";
-      else if(myVal < otherVal) status = "Du liegst hinten.";
-      else status = "Unentschieden.";
-
-      div.innerHTML = `
-        <div class="duel-vs">${myName} vs ${otherName} · ${typeText}</div>
-        <div class="duel-progress">
-          Du: ${type==="km" ? myVal.toFixed(1) : myVal} · Gegner: ${type==="km" ? otherVal.toFixed(1) : otherVal}<br>
-          Zeitraum: ${d.startDate} bis ${d.endDate}<br>
-          Belohnung: ${reward}<br>
-          ${status}
-        </div>
-      `;
-      box.appendChild(div);
-    }
-
-  } catch(e){
-    console.error(e);
-    box.textContent = "Fehler beim Laden der Duelle.";
-  }
-}
-
-/* ===== SPIELER: OFFENE DUELL-ANFRAGEN ===== */
-async function loadIncomingDuelsForPlayer(){
-  const box = $("duelRequestsContainer");
-  if(!currentPlayer){
-    box.textContent = "Keine offenen Anfragen.";
-    return;
-  }
-  const code = currentPlayer.code;
-
-  try {
-    const snap = await db.collection("duels")
-      .where("playerB","==",code)
-      .where("status","==","pending")
-      .get();
-
-    if(snap.empty){
-      box.textContent = "Keine offenen Anfragen.";
-      return;
-    }
-
-    const playersSnap = await db.collection("players").get();
-    const nameMap = {};
-    playersSnap.forEach(doc=>{
-      const p = doc.data();
-      nameMap[p.code] = p.name || p.code;
-    });
-
-    const today = todayDateString();
-
-    box.innerHTML = "";
-    snap.forEach(doc=>{
-      const d = doc.data();
-      const id = doc.id;
-      const challengerName = nameMap[d.playerA] || d.playerA;
-      const typeText = d.type === "stabi" ? "Stabi" : "km";
-      const reward = d.rewardText || "keine festgelegte Belohnung";
-
-      const expired = !d.endDate || d.endDate < today || d.endDate > CHALLENGE_END_DATE;
-      const div = document.createElement("div");
-      div.className = "duel-card";
-      let text = `
-        <div class="duel-vs">${challengerName} fordert dich heraus (${typeText})</div>
-        <div class="duel-progress">
-          Zeitraum: ${d.startDate} bis ${d.endDate || "-"}<br>
-          Belohnung: ${reward}<br>
-      `;
-      if(expired){
-        text += `<span class="small-text">Diese Anfrage ist abgelaufen und sollte abgelehnt werden.</span><br>`;
-      }
-      text += `
-          <button class="entry-btn entry-edit duel-accept" data-id="${id}">Annehmen</button>
-          <button class="entry-btn entry-delete duel-reject" data-id="${id}">Ablehnen</button>
-        </div>
-      `;
-      div.innerHTML = text;
-      box.appendChild(div);
-    });
-  } catch(e){
-    console.error(e);
-    box.textContent = "Fehler beim Laden der Anfragen.";
-  }
-}
-
-$("duelRequestsContainer").addEventListener("click", async (e)=>{
-  const btn = e.target;
-  const id = btn.dataset.id;
-  if(!id || !currentPlayer) return;
-  const msg = $("duelPlayerMessage");
-
-  if(btn.classList.contains("duel-accept")){
-    try {
-      const ref = db.collection("duels").doc(id);
-      const doc = await ref.get();
-      if(!doc.exists){
-        msg.textContent = "Anfrage existiert nicht mehr.";
-        await loadIncomingDuelsForPlayer();
-        return;
-      }
-      const d = doc.data();
-      if(d.playerB !== currentPlayer.code || d.status !== "pending"){
-        msg.textContent = "Diese Anfrage ist nicht mehr gültig.";
-        await loadIncomingDuelsForPlayer();
-        return;
-      }
-      if(d.endDate > CHALLENGE_END_DATE){
-        msg.textContent = "Enddatum liegt nach 02.02.2026 – Anfrage wird abgelehnt.";
-        await ref.update({status:"rejected"});
-        await loadIncomingDuelsForPlayer();
-        return;
-      }
-      const diff = daysBetweenStr(d.startDate, d.endDate);
-      if(diff < 0 || diff >= MAX_DUEL_DAYS){
-        msg.textContent = "Dieses Duell überschreitet die maximale Dauer und wird abgelehnt.";
-        await ref.update({status:"rejected"});
-        await loadIncomingDuelsForPlayer();
-        return;
-      }
-
-      await ref.update({status:"active"});
-      msg.textContent = "Duell angenommen.";
-      await loadIncomingDuelsForPlayer();
-      await loadDuelsForPlayer();
-      await loadDuelAdminList();
-    } catch(e){
-      console.error(e);
-      msg.textContent = "Fehler beim Annehmen der Anfrage.";
-    }
-  }
-
-  if(btn.classList.contains("duel-reject")){
-    try {
-      const ref = db.collection("duels").doc(id);
-      await ref.update({status:"rejected"});
-      msg.textContent = "Anfrage abgelehnt.";
-      await loadIncomingDuelsForPlayer();
-      await loadDuelAdminList();
-    } catch(e){
-      console.error(e);
-      msg.textContent = "Fehler beim Ablehnen der Anfrage.";
-    }
-  }
-});
-
-/* ===== AUSWERTUNG ZEITRAUM (COACH) ===== */
-$("evalRunBtn").onclick = runEvaluation;
-$("saveAwardBtn").onclick = saveAwardFromEval;
-
-async function runEvaluation(){
-  const start = $("evalStartInput").value;
-  const end = $("evalEndInput").value;
-  const rangeLabel = $("evalRangeLabel");
-  const tbody = $("evalTableBody");
-  const awardKmText = $("evalAwardKmText");
-  const awardStabiText = $("evalAwardStabiText");
-  const awardMsg = $("awardSaveMessage");
-
-  awardMsg.textContent = "";
-  awardKmText.textContent = "";
-  awardStabiText.textContent = "";
-  lastEvalAwards = null;
-
-  if(!start || !end){
-    rangeLabel.textContent = "Bitte Start- und Enddatum wählen.";
-    tbody.innerHTML = "";
-    return;
-  }
-  if(start > end){
-    rangeLabel.textContent = "Startdatum darf nicht nach dem Enddatum liegen.";
-    tbody.innerHTML = "";
-    return;
-  }
-
-  rangeLabel.textContent = `Zeitraum: ${start} bis ${end}`;
-  tbody.innerHTML = "<tr><td colspan='3'>Berechne...</td></tr>";
-
-  try {
-    const playersSnap = await db.collection("players").get();
-    const nameMap = {};
-    playersSnap.forEach(doc=>{
-      const d = doc.data();
-      nameMap[d.code] = d.name || d.code;
-    });
-
-    const sums = {};
-
-    const runsSnap = await db.collection("runs")
-      .where("date",">=",start)
-      .where("date","<=",end)
-      .get();
-    runsSnap.forEach(doc=>{
-      const d = doc.data();
-      const code = d.playerCode;
-      if(!code) return;
-      if(!sums[code]) sums[code] = { name: nameMap[code] || code, km:0, stabi:0 };
-      sums[code].km += d.km || 0;
-    });
-
-    const stabiSnap = await db.collection("stabiSessions")
-      .where("date",">=",start)
-      .where("date","<=",end)
-      .get();
-    stabiSnap.forEach(doc=>{
-      const d = doc.data();
-      const code = d.playerCode;
-      if(!code) return;
-      if(!sums[code]) sums[code] = { name: nameMap[code] || code, km:0, stabi:0 };
-      sums[code].stabi += 1;
-    });
-
-    const list = Object.entries(sums).map(([code,val])=>({
-      code,
-      name: val.name,
-      km: val.km,
-      stabi: val.stabi
-    }));
-
-    list.sort((a,b)=> b.km - a.km);
-
-    if(list.length === 0){
-      tbody.innerHTML = "<tr><td colspan='3'>Keine Einträge im Zeitraum.</td></tr>";
-      awardKmText.textContent = "";
-      awardStabiText.textContent = "";
-      return;
-    }
-
-    tbody.innerHTML = "";
-    list.forEach(row=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${row.name}</td>
-        <td>${row.km.toFixed(1)}</td>
-        <td>${row.stabi}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    let bestKm = null;
-    let bestStabi = null;
-    list.forEach(row=>{
-      if(bestKm === null || row.km > bestKm.km){
-        bestKm = { ...row };
-      }
-      if(bestStabi === null || row.stabi > bestStabi.stabi){
-        bestStabi = { ...row };
-      }
-    });
-
-    if(bestKm && bestKm.km > 0){
-      awardKmText.textContent = `Kilometer-König im Zeitraum: ${bestKm.name} mit ${bestKm.km.toFixed(1)} km.`;
-    } else {
-      awardKmText.textContent = "Keine Lauf-Leistung im Zeitraum.";
-      bestKm = null;
-    }
-
-    if(bestStabi && bestStabi.stabi > 0){
-      awardStabiText.textContent = `Stabi-König im Zeitraum: ${bestStabi.name} mit ${bestStabi.stabi} Stabi-Einheiten.`;
-    } else {
-      awardStabiText.textContent = "Keine Stabi-Einheit im Zeitraum.";
-      bestStabi = null;
-    }
-
-    lastEvalAwards = {
-      start,
-      end,
-      bestKm,
-      bestStabi
-    };
-
-    if(bestKm && !$("awardTitleKmInput").value.trim()){
-      $("awardTitleKmInput").value = `Kilometer König ${start} bis ${end}`;
-    }
-    if(bestStabi && !$("awardTitleStabiInput").value.trim()){
-      $("awardTitleStabiInput").value = `Stabi König ${start} bis ${end}`;
-    }
-
-  } catch(e){
-    console.error(e);
-    tbody.innerHTML = "<tr><td colspan='3'>Fehler bei der Auswertung.</td></tr>";
-    awardKmText.textContent = "";
-    awardStabiText.textContent = "";
-  }
-}
-
-async function saveAwardFromEval(){
-  const msg = $("awardSaveMessage");
-  msg.textContent = "";
-
-  if(!lastEvalAwards){
-    msg.textContent = "Zuerst Auswertung ausführen, dann Auszeichnungen speichern.";
-    return;
-  }
-
-  const titleKm = $("awardTitleKmInput").value.trim() || "Kilometer König";
-  const titleStabi = $("awardTitleStabiInput").value.trim() || "Stabi König";
-
-  const bestKm = lastEvalAwards.bestKm;
-  const bestStabi = lastEvalAwards.bestStabi;
-
-  const payload = {
-    kmTitle: bestKm ? titleKm : null,
-    kmWinnerName: bestKm ? bestKm.name : null,
-    kmWinnerCode: bestKm ? bestKm.code : null,
-    kmValue: bestKm ? bestKm.km : null,
-    kmStartDate: bestKm ? lastEvalAwards.start : null,
-    kmEndDate: bestKm ? lastEvalAwards.end : null,
-    stabiTitle: bestStabi ? titleStabi : null,
-    stabiWinnerName: bestStabi ? bestStabi.name : null,
-    stabiWinnerCode: bestStabi ? bestStabi.code : null,
-    stabiValue: bestStabi ? bestStabi.stabi : null,
-    stabiStartDate: bestStabi ? lastEvalAwards.start : null,
-    stabiEndDate: bestStabi ? lastEvalAwards.end : null,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  try {
-    await db.collection("awards").doc("current").set(payload);
-    msg.textContent = "Auszeichnungen gespeichert.";
-    await loadCoachAwardSummary();
-    await loadAwardForPlayer();
-  } catch(e){
-    console.error(e);
-    msg.textContent = "Fehler beim Speichern der Auszeichnungen.";
-  }
-}
-
-/* ===== PDF-REPORTS (nur Coach) ===== */
-async function generatePlayerPdf(code, name){
-  const { jsPDF } = window.jspdf || {};
-  if(!jsPDF){
-    alert("jsPDF nicht geladen.");
-    return;
-  }
-
-  try {
-    const docSnap = await db.collection("players").doc(code).get();
-    if(!docSnap.exists){
-      alert("Spieler nicht gefunden.");
-      return;
-    }
-    const p = docSnap.data();
-    const km = p.totalKm || 0;
-    const stabi = p.stabiCount || 0;
-    const xp = p.xp || 0;
-    const goal = p.goalKm || DEFAULT_GOAL;
-    const tier = getXpTier(xp);
-    const level = Math.floor(xp / 100) + 1;
-
-    const pdf = new jsPDF();
-    const today = todayDateString();
-
-    pdf.setFontSize(16);
-    pdf.text("Young Panthers U13 – Leistungsbericht", 10, 15);
-    pdf.setFontSize(11);
-    pdf.text("Datum: " + today, 10, 22);
-
-    pdf.text("Spieler: " + name, 10, 32);
-    pdf.text("Code: " + code, 10, 38);
-
-    pdf.line(10, 42, 200, 42);
-
-    pdf.text("Gesamt-Kilometer: " + km.toFixed(1) + " km", 10, 52);
-    pdf.text("Persönliches Ziel: " + goal + " km", 10, 58);
-    pdf.text("Stabi-Einheiten: " + stabi, 10, 64);
-    pdf.text("XP: " + xp + " (Level " + level + ", " + tier.name + ")", 10, 70);
-
-    pdf.text("Einschätzung / Notizen Trainer:", 10, 82);
-    pdf.rect(10, 85, 190, 40);
-
-    pdf.save(`panther_${code}_${today}.pdf`);
-  } catch(e){
-    console.error(e);
-    alert("Fehler beim Erstellen des PDFs.");
-  }
-}
-
-/* ===== AUTO LOGIN FÜR SPIELER ===== */
-window.onload = ()=>{
-  let saved = localStorage.getItem("panther_code");
-  if(saved){
-    $("loginCode").value = saved;
-    loginWithCode();
-  } else {
-    setupDuelEndInputLimits();
-  }
-};
-</script>
-
-</body>
-</html>
+    return

@@ -476,6 +476,18 @@
       <div id="challengeMessage" class="small-text" style="margin-top:6px;"></div>
     </div>
 
+    <!-- Auszeichnungen -->
+    <div class="card">
+      <h3>Auszeichnungen</h3>
+      <div id="awardBox">
+        <div id="awardKmTitlePlayer" style="font-weight:600;">Noch keine Lauf-Auszeichnung</div>
+        <div id="awardKmSubtitlePlayer" class="small-text"></div>
+        <div style="margin-top:8px;"></div>
+        <div id="awardStabiTitlePlayer" style="font-weight:600;">Noch keine Stabi-Auszeichnung</div>
+        <div id="awardStabiSubtitlePlayer" class="small-text"></div>
+      </div>
+    </div>
+
     <!-- Streak & Kalender -->
     <div class="card">
       <h3>Streak & Kalender</h3>
@@ -584,7 +596,7 @@
         <button id="coachBackBtn" class="secondary small">Zurück</button>
       </div>
       <p class="small-text">
-        Übersicht aller Spieler. Km/Stabi/XP zurücksetzen, Spieler löschen, Challenge verwalten und Einträge bearbeiten.
+        Übersicht aller Spieler. Km/Stabi/XP zurücksetzen, Spieler löschen, Challenge verwalten, Einträge bearbeiten und Auswertungen nach Zeitraum.
       </p>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
@@ -620,6 +632,7 @@
           <button id="challengeLoadBtn" class="secondary small">Challenge laden</button>
         </div>
         <div id="coachChallengeSummary" class="small-text" style="margin-top:4px;"></div>
+        <div id="coachAwardSummary" class="small-text" style="margin-top:4px;"></div>
       </div>
 
       <table class="coach-table">
@@ -636,6 +649,44 @@
         <tbody id="coachPlayersBody"></tbody>
       </table>
       <div id="coachActionMessage" class="small-text"></div>
+
+      <hr>
+
+      <!-- Zeitraum-Auswertung -->
+      <h3>Auswertung Zeitraum</h3>
+      <p class="small-text">Start- und Enddatum wählen – zeigt Summe km/Stabi pro Spieler im Zeitraum. Ideal für „Dezember-König“ usw.</p>
+      <div class="flex-row">
+        <div class="flex-grow">
+          <label>Von</label>
+          <input type="date" id="evalStartInput">
+        </div>
+        <div class="flex-grow">
+          <label>Bis</label>
+          <input type="date" id="evalEndInput">
+        </div>
+      </div>
+      <button id="evalRunBtn" class="secondary small">Auswertung anzeigen</button>
+      <div id="evalRangeLabel" class="small-text"></div>
+      <table class="coach-table">
+        <thead>
+          <tr>
+            <th>Spieler</th>
+            <th>km im Zeitraum</th>
+            <th>Stabi im Zeitraum</th>
+          </tr>
+        </thead>
+        <tbody id="evalTableBody"></tbody>
+      </table>
+      <div id="evalAwardKmText" class="small-text" style="margin-top:4px;"></div>
+      <div id="evalAwardStabiText" class="small-text" style="margin-top:2px;"></div>
+      <div style="margin-top:6px;">
+        <label>Titel Laufen</label>
+        <input type="text" id="awardTitleKmInput" placeholder="z.B. Dezember Kilometer König">
+        <label>Titel Stabi</label>
+        <input type="text" id="awardTitleStabiInput" placeholder="z.B. Dezember Stabi König">
+        <button id="saveAwardBtn" class="secondary small">Auszeichnungen speichern</button>
+        <div id="awardSaveMessage" class="small-text"></div>
+      </div>
     </div>
 
     <div id="coachEntriesCard" class="card" style="display:none;">
@@ -687,6 +738,7 @@ let currentPlayer = null;
 let currentCoachName = null;
 let currentEditPlayerCode = null;
 let currentEditPlayerName = null;
+let lastEvalAwards = null;
 
 const $ = id => document.getElementById(id);
 function show(id){ $(id).style.display=""; }
@@ -860,7 +912,6 @@ async function loadStreakAndCalendar(){
     // Aktueller Streak (ab heute rückwärts)
     let currentStreak = 0;
     const today = new Date();
-    const todayStr = today.toISOString().slice(0,10);
     const lastDate = dates[dates.length-1];
     const diffLast = daysBetween(lastDate, today);
 
@@ -942,6 +993,65 @@ async function loadStreakAndCalendar(){
   }
 }
 
+/* ===== AUSZEICHNUNG SPIELER-SEITE ===== */
+async function loadAwardForPlayer(){
+  const kmTitleEl = $("awardKmTitlePlayer");
+  const kmSubEl = $("awardKmSubtitlePlayer");
+  const stTitleEl = $("awardStabiTitlePlayer");
+  const stSubEl = $("awardStabiSubtitlePlayer");
+
+  try {
+    const doc = await db.collection("awards").doc("current").get();
+    if(!doc.exists){
+      kmTitleEl.textContent = "Noch keine Lauf-Auszeichnung";
+      kmSubEl.textContent = "";
+      stTitleEl.textContent = "Noch keine Stabi-Auszeichnung";
+      stSubEl.textContent = "";
+      return;
+    }
+    const a = doc.data();
+
+    // Lauf-Auszeichnung
+    if(a.kmWinnerName){
+      kmTitleEl.textContent = a.kmTitle || "Kilometer König";
+      let line = "🏆 " + a.kmWinnerName;
+      if(typeof a.kmValue === "number"){
+        line += " – " + a.kmValue.toFixed(1) + " km";
+      }
+      if(a.kmStartDate && a.kmEndDate){
+        line += " (" + a.kmStartDate + " bis " + a.kmEndDate + ")";
+      }
+      kmSubEl.textContent = line;
+    } else {
+      kmTitleEl.textContent = "Noch keine Lauf-Auszeichnung";
+      kmSubEl.textContent = "";
+    }
+
+    // Stabi-Auszeichnung
+    if(a.stabiWinnerName){
+      stTitleEl.textContent = a.stabiTitle || "Stabi König";
+      let line2 = "💪 " + a.stabiWinnerName;
+      if(typeof a.stabiValue === "number"){
+        line2 += " – " + a.stabiValue + " Stabi";
+      }
+      if(a.stabiStartDate && a.stabiEndDate){
+        line2 += " (" + a.stabiStartDate + " bis " + a.stabiEndDate + ")";
+      }
+      stSubEl.textContent = line2;
+    } else {
+      stTitleEl.textContent = "Noch keine Stabi-Auszeichnung";
+      stSubEl.textContent = "";
+    }
+
+  } catch(e){
+    console.error(e);
+    kmTitleEl.textContent = "Fehler beim Laden der Auszeichnung.";
+    kmSubEl.textContent = "";
+    stTitleEl.textContent = "";
+    stSubEl.textContent = "";
+  }
+}
+
 /* ===== DASHBOARD ===== */
 async function refreshDashboard(){
   const playersSnap = await db.collection("players").get();
@@ -985,13 +1095,12 @@ async function refreshDashboard(){
   $("personalGoalLabel").textContent = goal;
   $("personalGoalInput").value = goal;
 
-  // Leaderboard
+  // Leaderboard + Anti-Cheat-Markierung
   players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
 
   let tbody = $("leaderboardBody");
   tbody.innerHTML = "";
 
-  // Anti-Cheat: Spieler mit suspicious-Einträgen holen
   const suspiciousPlayers = new Set();
   try {
     const runsSusp = await db.collection("runs").where("suspicious","==",true).get();
@@ -1025,6 +1134,7 @@ async function refreshDashboard(){
 
   renderBadges(currentPlayer);
   await loadCurrentChallengeForPlayer();
+  await loadAwardForPlayer();
   await loadStreakAndCalendar();
   await loadActivityFeed();
 }
@@ -1062,7 +1172,7 @@ $("saveRunBtn").onclick = async ()=>{
     return;
   }
 
-  const suspicious = km > 25; // Anti-Cheat: alles über 25 km markieren
+  const suspicious = km > 25; // Anti-Cheat
 
   try {
     await db.collection("runs").add({
@@ -1246,9 +1356,42 @@ async function loadCoachView(){
 
     tbody.innerHTML = rows.join("") || "<tr><td colspan='6'>Keine Spieler vorhanden.</td></tr>";
     await loadChallengeSummary();
+    await loadCoachAwardSummary();
   } catch(e){
     console.error(e);
     tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
+  }
+}
+
+/* ===== COACH-AUSZEICHNUNG-ZUSAMMENFASSUNG ===== */
+async function loadCoachAwardSummary(){
+  const el = $("coachAwardSummary");
+  try {
+    const doc = await db.collection("awards").doc("current").get();
+    if(!doc.exists){
+      el.textContent = "Noch keine Auszeichnung gespeichert.";
+      return;
+    }
+    const a = doc.data();
+    let parts = [];
+    if(a.kmWinnerName){
+      let t = `"${a.kmTitle || "Kilometer König"}" – ${a.kmWinnerName}`;
+      if(a.kmStartDate && a.kmEndDate){
+        t += ` (${a.kmStartDate} bis ${a.kmEndDate})`;
+      }
+      parts.push(t);
+    }
+    if(a.stabiWinnerName){
+      let t2 = `"${a.stabiTitle || "Stabi König"}" – ${a.stabiWinnerName}`;
+      if(a.stabiStartDate && a.stabiEndDate){
+        t2 += ` (${a.stabiStartDate} bis ${a.stabiEndDate})`;
+      }
+      parts.push(t2);
+    }
+    el.textContent = parts.length ? "Aktuelle Auszeichnungen: " + parts.join(" | ") : "Noch keine Auszeichnung gespeichert.";
+  } catch(e){
+    console.error(e);
+    el.textContent = "Fehler beim Laden der Auszeichnung.";
   }
 }
 
@@ -1751,6 +1894,191 @@ async function loadActivityFeed(){
 }
 
 $("refreshFeedBtn").onclick = loadActivityFeed;
+
+/* ===== AUSWERTUNG ZEITRAUM (COACH) ===== */
+$("evalRunBtn").onclick = runEvaluation;
+$("saveAwardBtn").onclick = saveAwardFromEval;
+
+async function runEvaluation(){
+  const start = $("evalStartInput").value;
+  const end = $("evalEndInput").value;
+  const rangeLabel = $("evalRangeLabel");
+  const tbody = $("evalTableBody");
+  const awardKmText = $("evalAwardKmText");
+  const awardStabiText = $("evalAwardStabiText");
+  const awardMsg = $("awardSaveMessage");
+
+  awardMsg.textContent = "";
+  awardKmText.textContent = "";
+  awardStabiText.textContent = "";
+  lastEvalAwards = null;
+
+  if(!start || !end){
+    rangeLabel.textContent = "Bitte Start- und Enddatum wählen.";
+    tbody.innerHTML = "";
+    return;
+  }
+  if(start > end){
+    rangeLabel.textContent = "Startdatum darf nicht nach dem Enddatum liegen.";
+    tbody.innerHTML = "";
+    return;
+  }
+
+  rangeLabel.textContent = `Zeitraum: ${start} bis ${end}`;
+  tbody.innerHTML = "<tr><td colspan='3'>Berechne...</td></tr>";
+
+  try {
+    // Namen holen
+    const playersSnap = await db.collection("players").get();
+    const nameMap = {};
+    playersSnap.forEach(doc=>{
+      const d = doc.data();
+      nameMap[d.code] = d.name || d.code;
+    });
+
+    const sums = {}; // code -> {name, km, stabi}
+
+    const runsSnap = await db.collection("runs")
+      .where("date",">=",start)
+      .where("date","<=",end)
+      .get();
+    runsSnap.forEach(doc=>{
+      const d = doc.data();
+      const code = d.playerCode;
+      if(!code) return;
+      if(!sums[code]) sums[code] = { name: nameMap[code] || code, km:0, stabi:0 };
+      sums[code].km += d.km || 0;
+    });
+
+    const stabiSnap = await db.collection("stabiSessions")
+      .where("date",">=",start)
+      .where("date","<=",end)
+      .get();
+    stabiSnap.forEach(doc=>{
+      const d = doc.data();
+      const code = d.playerCode;
+      if(!code) return;
+      if(!sums[code]) sums[code] = { name: nameMap[code] || code, km:0, stabi:0 };
+      sums[code].stabi += 1;
+    });
+
+    const list = Object.entries(sums).map(([code,val])=>({
+      code,
+      name: val.name,
+      km: val.km,
+      stabi: val.stabi
+    }));
+
+    list.sort((a,b)=> b.km - a.km);
+
+    if(list.length === 0){
+      tbody.innerHTML = "<tr><td colspan='3'>Keine Einträge im Zeitraum.</td></tr>";
+      awardKmText.textContent = "";
+      awardStabiText.textContent = "";
+      return;
+    }
+
+    tbody.innerHTML = "";
+    list.forEach(row=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.name}</td>
+        <td>${row.km.toFixed(1)}</td>
+        <td>${row.stabi}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Beste Laufen / Beste Stabi
+    let bestKm = null;
+    let bestStabi = null;
+    list.forEach(row=>{
+      if(bestKm === null || row.km > bestKm.km){
+        bestKm = { ...row };
+      }
+      if(bestStabi === null || row.stabi > bestStabi.stabi){
+        bestStabi = { ...row };
+      }
+    });
+
+    if(bestKm && bestKm.km > 0){
+      awardKmText.textContent = `Kilometer-König im Zeitraum: ${bestKm.name} mit ${bestKm.km.toFixed(1)} km.`;
+    } else {
+      awardKmText.textContent = "Keine Lauf-Leistung im Zeitraum.";
+      bestKm = null;
+    }
+
+    if(bestStabi && bestStabi.stabi > 0){
+      awardStabiText.textContent = `Stabi-König im Zeitraum: ${bestStabi.name} mit ${bestStabi.stabi} Stabi-Einheiten.`;
+    } else {
+      awardStabiText.textContent = "Keine Stabi-Einheit im Zeitraum.";
+      bestStabi = null;
+    }
+
+    lastEvalAwards = {
+      start,
+      end,
+      bestKm,
+      bestStabi
+    };
+
+    // Titel vorbelegen, falls leer
+    if(bestKm && !$("awardTitleKmInput").value.trim()){
+      $("awardTitleKmInput").value = `Kilometer König ${start} bis ${end}`;
+    }
+    if(bestStabi && !$("awardTitleStabiInput").value.trim()){
+      $("awardTitleStabiInput").value = `Stabi König ${start} bis ${end}`;
+    }
+
+  } catch(e){
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='3'>Fehler bei der Auswertung.</td></tr>";
+    awardKmText.textContent = "";
+    awardStabiText.textContent = "";
+  }
+}
+
+async function saveAwardFromEval(){
+  const msg = $("awardSaveMessage");
+  msg.textContent = "";
+
+  if(!lastEvalAwards){
+    msg.textContent = "Zuerst Auswertung ausführen, dann Auszeichnungen speichern.";
+    return;
+  }
+
+  const titleKm = $("awardTitleKmInput").value.trim() || "Kilometer König";
+  const titleStabi = $("awardTitleStabiInput").value.trim() || "Stabi König";
+
+  const bestKm = lastEvalAwards.bestKm;
+  const bestStabi = lastEvalAwards.bestStabi;
+
+  const payload = {
+    kmTitle: bestKm ? titleKm : null,
+    kmWinnerName: bestKm ? bestKm.name : null,
+    kmWinnerCode: bestKm ? bestKm.code : null,
+    kmValue: bestKm ? bestKm.km : null,
+    kmStartDate: bestKm ? lastEvalAwards.start : null,
+    kmEndDate: bestKm ? lastEvalAwards.end : null,
+    stabiTitle: bestStabi ? titleStabi : null,
+    stabiWinnerName: bestStabi ? bestStabi.name : null,
+    stabiWinnerCode: bestStabi ? bestStabi.code : null,
+    stabiValue: bestStabi ? bestStabi.stabi : null,
+    stabiStartDate: bestStabi ? lastEvalAwards.start : null,
+    stabiEndDate: bestStabi ? lastEvalAwards.end : null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    await db.collection("awards").doc("current").set(payload);
+    msg.textContent = "Auszeichnungen gespeichert.";
+    await loadCoachAwardSummary();
+    await loadAwardForPlayer();
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler beim Speichern der Auszeichnungen.";
+  }
+}
 
 /* ===== AUTO LOGIN FÜR SPIELER ===== */
 window.onload = ()=>{

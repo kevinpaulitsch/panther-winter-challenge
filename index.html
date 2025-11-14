@@ -274,6 +274,16 @@
       font-size:0.75rem;
     }
 
+    .coach-btn-details {
+      background:#555;
+      color:#fff;
+      box-shadow:none;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:0.75rem;
+      margin-top:4px;
+    }
+
     .activity-item {
       padding:6px 8px;
       border-radius:10px;
@@ -292,6 +302,53 @@
     .activity-type {
       font-size:0.8rem;
       color:rgba(255,255,255,0.7);
+    }
+
+    .calendar-grid {
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:4px;
+      margin-top:6px;
+      font-size:0.75rem;
+    }
+
+    .calendar-day {
+      padding:4px 0;
+      text-align:center;
+      border-radius:6px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .calendar-day.empty {
+      background: transparent;
+    }
+
+    .calendar-day.has-activity {
+      background: rgba(255,255,255,0.2);
+      font-weight:600;
+    }
+
+    .calendar-day.today {
+      border:1px solid var(--panther-gold);
+    }
+
+    .entry-btn {
+      padding:3px 6px;
+      border-radius:999px;
+      font-size:0.75rem;
+      margin-right:4px;
+    }
+
+    .entry-edit {
+      background:#3b82f6;
+      color:#fff;
+      border:none;
+    }
+
+    .entry-delete {
+      background:#b91c1c;
+      color:#fff;
+      border:none;
     }
 
     @media (max-width: 600px) {
@@ -344,7 +401,7 @@
   <!-- SPIELER-APP -->
   <div id="appView" style="display:none;">
 
-    <!-- Spieler + Team -->
+    <!-- Spieler + Team + persönliches Ziel -->
     <div class="card">
       <div class="header-bar" style="margin-bottom:4px;">
         <img src="svtillmitsch-logo.png" alt="SV Tillmitsch Logo" class="logo">
@@ -381,6 +438,16 @@
 
       <hr>
 
+      <h3>Persönliches Ziel</h3>
+      <p class="small-text">Standard ist 80 km. Du kannst dir hier dein eigenes km-Ziel setzen.</p>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="number" id="personalGoalInput" step="1" style="max-width:120px;" placeholder="z.B. 80">
+        <button id="savePersonalGoalBtn" class="secondary small">Ziel speichern</button>
+      </div>
+      <div class="small-text">Aktuelles Ziel: <span id="personalGoalLabel">80</span> km</div>
+
+      <hr>
+
       <h3>Mannschaftsziel</h3>
       <div style="display:flex; justify-content:space-between;">
         <span>Team-Kilometer</span>
@@ -407,6 +474,15 @@
         </div>
       </div>
       <div id="challengeMessage" class="small-text" style="margin-top:6px;"></div>
+    </div>
+
+    <!-- Streak & Kalender -->
+    <div class="card">
+      <h3>Streak & Kalender</h3>
+      <div id="streakText" class="small-text">Noch keine Einträge.</div>
+      <div id="bestStreakText" class="small-text"></div>
+      <div id="calendarMonthLabel" style="margin-top:8px; font-weight:600;"></div>
+      <div id="calendarGrid" class="calendar-grid"></div>
     </div>
 
     <!-- Leaderboard -->
@@ -508,7 +584,7 @@
         <button id="coachBackBtn" class="secondary small">Zurück</button>
       </div>
       <p class="small-text">
-        Übersicht aller Spieler. Km/Stabi/XP zurücksetzen, Spieler löschen und Challenge verwalten.
+        Übersicht aller Spieler. Km/Stabi/XP zurücksetzen, Spieler löschen, Challenge verwalten und Einträge bearbeiten.
       </p>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
@@ -561,6 +637,24 @@
       </table>
       <div id="coachActionMessage" class="small-text"></div>
     </div>
+
+    <div id="coachEntriesCard" class="card" style="display:none;">
+      <h3>Einträge bearbeiten</h3>
+      <div id="coachEntriesTitle" class="small-text"></div>
+      <table class="coach-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Typ</th>
+            <th>Wert</th>
+            <th>Kommentar</th>
+            <th>⚠</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="coachEntriesBody"></tbody>
+      </table>
+    </div>
   </div>
 
 </div><!-- container -->
@@ -591,6 +685,8 @@ const db = firebase.firestore();
 
 let currentPlayer = null;
 let currentCoachName = null;
+let currentEditPlayerCode = null;
+let currentEditPlayerName = null;
 
 const $ = id => document.getElementById(id);
 function show(id){ $(id).style.display=""; }
@@ -632,6 +728,7 @@ async function loginWithCode(){
     } else {
       currentPlayer = doc.data();
       if(currentPlayer.xp === undefined) currentPlayer.xp = 0;
+      if(currentPlayer.goalKm === undefined) currentPlayer.goalKm = DEFAULT_GOAL;
     }
 
     localStorage.setItem("panther_code", code);
@@ -696,6 +793,155 @@ function renderBadges(player){
   });
 }
 
+/* ===== STREAK & KALENDER ===== */
+function daysBetween(a,b){
+  const msPerDay = 24*60*60*1000;
+  const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utc2 - utc1) / msPerDay);
+}
+
+async function loadStreakAndCalendar(){
+  const streakText = $("streakText");
+  const bestStreakText = $("bestStreakText");
+  const monthLabel = $("calendarMonthLabel");
+  const grid = $("calendarGrid");
+
+  if(!currentPlayer){
+    streakText.textContent = "Noch keine Einträge.";
+    bestStreakText.textContent = "";
+    grid.innerHTML = "";
+    monthLabel.textContent = "";
+    return;
+  }
+
+  try {
+    const runsSnap = await db.collection("runs").where("playerCode","==",currentPlayer.code).get();
+    const stabiSnap = await db.collection("stabiSessions").where("playerCode","==",currentPlayer.code).get();
+
+    const dateSet = new Set();
+
+    runsSnap.forEach(doc=>{
+      const d = doc.data();
+      if(d.date) dateSet.add(d.date);
+    });
+    stabiSnap.forEach(doc=>{
+      const d = doc.data();
+      if(d.date) dateSet.add(d.date);
+    });
+
+    const dateStrings = Array.from(dateSet);
+    if(dateStrings.length === 0){
+      streakText.textContent = "Noch keine Trainings-Einträge.";
+      bestStreakText.textContent = "";
+      grid.innerHTML = "";
+      const now = new Date();
+      monthLabel.textContent = now.toLocaleDateString("de-AT", { month:"long", year:"numeric" });
+      return;
+    }
+
+    dateStrings.sort();
+    const dates = dateStrings.map(ds => new Date(ds + "T00:00:00"));
+
+    // Bester Streak
+    let best = 1;
+    let current = 1;
+    for(let i=1;i<dates.length;i++){
+      const diff = daysBetween(dates[i-1], dates[i]);
+      if(diff === 1){
+        current++;
+      } else {
+        if(current > best) best = current;
+        current = 1;
+      }
+    }
+    if(current > best) best = current;
+
+    // Aktueller Streak (ab heute rückwärts)
+    let currentStreak = 0;
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0,10);
+    const lastDate = dates[dates.length-1];
+    const diffLast = daysBetween(lastDate, today);
+
+    if(diffLast === 0){ // letzter Eintrag heute
+      currentStreak = 1;
+      let last = lastDate;
+      for(let i = dates.length-2; i>=0; i--){
+        const diff = daysBetween(dates[i], last);
+        if(diff === 1){
+          currentStreak++;
+          last = dates[i];
+        } else {
+          break;
+        }
+      }
+    } else {
+      currentStreak = 0;
+    }
+
+    streakText.textContent = `Aktuelle Streak: ${currentStreak} Tag(e) in Folge Training.`;
+    bestStreakText.textContent = `Bester Streak bisher: ${best} Tag(e).`;
+
+    // Kalender für aktuellen Monat
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-11
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+
+    monthLabel.textContent = firstDay.toLocaleDateString("de-AT", { month:"long", year:"numeric" });
+
+    const activityInMonth = new Set();
+    dateStrings.forEach(ds=>{
+      const d = new Date(ds + "T00:00:00");
+      if(d.getFullYear() === year && d.getMonth() === month){
+        activityInMonth.add(d.getDate());
+      }
+    });
+
+    grid.innerHTML = "";
+    const weekdays = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+    weekdays.forEach(w=>{
+      const div = document.createElement("div");
+      div.className = "calendar-day";
+      div.style.fontWeight = "700";
+      div.textContent = w;
+      grid.appendChild(div);
+    });
+
+    // JS getDay: So=0,...Sa=6; wir wollen Mo=1,...So=7
+    let startIndex = firstDay.getDay(); // 0..6
+    if(startIndex === 0) startIndex = 7; // Sonntag
+    // Anzahl Leerslots vor dem 1.
+    for(let i=1;i<startIndex;i++){
+      const empty = document.createElement("div");
+      empty.className = "calendar-day empty";
+      empty.textContent = "";
+      grid.appendChild(empty);
+    }
+
+    for(let day=1; day<=daysInMonth; day++){
+      const div = document.createElement("div");
+      div.className = "calendar-day";
+      div.textContent = day;
+      if(activityInMonth.has(day)){
+        div.classList.add("has-activity");
+      }
+      if(day === now.getDate()){
+        div.classList.add("today");
+      }
+      grid.appendChild(div);
+    }
+  } catch(e){
+    console.error(e);
+    streakText.textContent = "Fehler beim Laden des Streaks.";
+    bestStreakText.textContent = "";
+    $("calendarGrid").innerHTML = "";
+  }
+}
+
 /* ===== DASHBOARD ===== */
 async function refreshDashboard(){
   const playersSnap = await db.collection("players").get();
@@ -705,6 +951,7 @@ async function refreshDashboard(){
   playersSnap.forEach(d=>{
     let p = d.data();
     if(p.xp === undefined) p.xp = 0;
+    if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
     teamKm += p.totalKm || 0;
     players.push(p);
   });
@@ -735,17 +982,40 @@ async function refreshDashboard(){
   $("teamGoalKm").textContent = TEAM_GOAL_KM;
   $("teamKmFill").style.width = Math.min(100, (teamKm/TEAM_GOAL_KM)*100) + "%";
 
+  $("personalGoalLabel").textContent = goal;
+  $("personalGoalInput").value = goal;
+
+  // Leaderboard
   players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
 
   let tbody = $("leaderboardBody");
   tbody.innerHTML = "";
+
+  // Anti-Cheat: Spieler mit suspicious-Einträgen holen
+  const suspiciousPlayers = new Set();
+  try {
+    const runsSusp = await db.collection("runs").where("suspicious","==",true).get();
+    runsSusp.forEach(doc=>{
+      const d = doc.data();
+      if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+    });
+    const stabiSusp = await db.collection("stabiSessions").where("suspicious","==",true).get();
+    stabiSusp.forEach(doc=>{
+      const d = doc.data();
+      if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+    });
+  } catch(e){
+    console.warn("Fehler beim Laden suspicious:", e);
+  }
+
   players.forEach((p,i)=>{
     const xpP = p.xp || 0;
+    const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
     let tr = document.createElement("tr");
     if(p.code===currentPlayer.code) tr.classList.add("highlight-row");
     tr.innerHTML = `
       <td>${i+1}.</td>
-      <td>${p.name}${p.code===currentPlayer.code?" 🐾":""}</td>
+      <td>${p.name}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
       <td>${(p.totalKm||0).toFixed(1)}</td>
       <td>${p.stabiCount||0}</td>
       <td>${xpP}</td>
@@ -755,10 +1025,31 @@ async function refreshDashboard(){
 
   renderBadges(currentPlayer);
   await loadCurrentChallengeForPlayer();
+  await loadStreakAndCalendar();
   await loadActivityFeed();
 }
 
 $("refreshBtn").onclick = refreshDashboard;
+
+/* ===== PERSÖNLICHES ZIEL SPEICHERN ===== */
+$("savePersonalGoalBtn").onclick = async ()=>{
+  if(!currentPlayer) return;
+  const val = parseFloat($("personalGoalInput").value || 0);
+  if(!(val > 0)){
+    alert("Bitte ein sinnvolles km-Ziel eingeben.");
+    return;
+  }
+  try {
+    await db.collection("players").doc(currentPlayer.code).update({
+      goalKm: val
+    });
+    currentPlayer.goalKm = val;
+    await refreshDashboard();
+  } catch(e){
+    console.error(e);
+    alert("Fehler beim Speichern des Ziels.");
+  }
+};
 
 /* ===== LAUF SPEICHERN ===== */
 $("saveRunBtn").onclick = async ()=>{
@@ -771,6 +1062,8 @@ $("saveRunBtn").onclick = async ()=>{
     return;
   }
 
+  const suspicious = km > 25; // Anti-Cheat: alles über 25 km markieren
+
   try {
     await db.collection("runs").add({
       playerCode: currentPlayer.code,
@@ -778,6 +1071,7 @@ $("saveRunBtn").onclick = async ()=>{
       km,
       time: parseInt($("runTime").value || 0),
       comment: $("runComment").value || null,
+      suspicious: suspicious,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -793,8 +1087,8 @@ $("saveRunBtn").onclick = async ()=>{
     $("runTime").value = "";
     $("runComment").value = "";
 
-    $("runMessage").textContent = `Gespeichert ✔ (+${xpGain} XP)`;
-    setTimeout(()=> $("runMessage").textContent="", 2000);
+    $("runMessage").textContent = `Gespeichert ✔ (+${xpGain} XP${suspicious ? " · ⚠ sehr viele km an einem Tag" : ""})`;
+    setTimeout(()=> $("runMessage").textContent="", 2500);
 
     refreshDashboard();
   } catch(e){
@@ -814,6 +1108,13 @@ $("saveStabiBtn").onclick = async ()=>{
   }
 
   try {
+    // Anti-Cheat: mehr als 2 Stabi-Sessions pro Tag markieren
+    const existingDay = await db.collection("stabiSessions")
+      .where("playerCode","==",currentPlayer.code)
+      .where("date","==",date)
+      .get();
+    const suspicious = existingDay.size >= 2;
+
     const rounds = parseInt($("stabiRounds").value || 1);
 
     await db.collection("stabiSessions").add({
@@ -821,6 +1122,7 @@ $("saveStabiBtn").onclick = async ()=>{
       date,
       rounds,
       comment: $("stabiComment").value || null,
+      suspicious: suspicious,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -831,8 +1133,8 @@ $("saveStabiBtn").onclick = async ()=>{
       xp: firebase.firestore.FieldValue.increment(xpGain)
     });
 
-    $("stabiMessage").textContent = `Gespeichert ✔ (+${xpGain} XP)`;
-    setTimeout(()=> $("stabiMessage").textContent="", 2000);
+    $("stabiMessage").textContent = `Gespeichert ✔ (+${xpGain} XP${suspicious ? " · ⚠ sehr viele Stabi-Einheiten an einem Tag" : ""})`;
+    setTimeout(()=> $("stabiMessage").textContent="", 2500);
 
     refreshDashboard();
   } catch(e){
@@ -891,27 +1193,57 @@ async function loadCoachView(){
   const msg = $("coachActionMessage");
   msg.textContent = "";
   tbody.innerHTML = "<tr><td colspan='6'>Lade Spieler...</td></tr>";
+  hide("coachEntriesCard");
 
   try {
     const snap = await db.collection("players").get();
-    let rows = [];
+    let players = [];
     snap.forEach(doc=>{
       const p = doc.data();
+      if(p.xp === undefined) p.xp = 0;
+      if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
+      players.push(p);
+    });
+
+    // Anti-Cheat Markierungen
+    const suspiciousPlayers = new Set();
+    try {
+      const runsSusp = await db.collection("runs").where("suspicious","==",true).get();
+      runsSusp.forEach(doc=>{
+        const d = doc.data();
+        if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+      });
+      const stabiSusp = await db.collection("stabiSessions").where("suspicious","==",true).get();
+      stabiSusp.forEach(doc=>{
+        const d = doc.data();
+        if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+      });
+    } catch(e){
+      console.warn("Fehler suspicious im Coach-View:", e);
+    }
+
+    players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
+
+    let rows = [];
+    players.forEach(p=>{
       const xp = p.xp || 0;
+      const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
       rows.push(`
-        <tr data-code="${p.code}">
+        <tr data-code="${p.code}" data-name="${p.name}">
           <td>${p.code}</td>
-          <td>${p.name}</td>
+          <td>${p.name}${suspiciousMark}</td>
           <td>${(p.totalKm||0).toFixed(1)}</td>
           <td>${p.stabiCount||0}</td>
           <td>${xp}</td>
           <td>
             <button class="coach-btn-reset">Reset</button>
             <button class="coach-btn-delete">Löschen</button>
+            <button class="coach-btn-details">Einträge</button>
           </td>
         </tr>
       `);
     });
+
     tbody.innerHTML = rows.join("") || "<tr><td colspan='6'>Keine Spieler vorhanden.</td></tr>";
     await loadChallengeSummary();
   } catch(e){
@@ -959,12 +1291,13 @@ $("coachExportBtn").onclick = async ()=>{
   }
 };
 
-/* ===== COACH-AKTIONEN (Reset / Delete) ===== */
+/* ===== COACH-AKTIONEN (Reset / Delete / Details) ===== */
 $("coachPlayersBody").addEventListener("click", async (e)=>{
   const target = e.target;
   const tr = target.closest("tr");
   if(!tr) return;
   const code = tr.dataset.code;
+  const name = tr.dataset.name || "";
   const msg = $("coachActionMessage");
 
   if(target.classList.contains("coach-btn-reset")){
@@ -1003,6 +1336,203 @@ $("coachPlayersBody").addEventListener("click", async (e)=>{
     } catch(e){
       console.error(e);
       msg.textContent = "Fehler beim Löschen.";
+    }
+  }
+
+  if(target.classList.contains("coach-btn-details")){
+    currentEditPlayerCode = code;
+    currentEditPlayerName = name;
+    loadPlayerEntries(code, name);
+  }
+});
+
+/* ===== EINZEL-EINTRÄGE LADEN & BEARBEITEN ===== */
+async function loadPlayerEntries(code, name){
+  const card = $("coachEntriesCard");
+  const title = $("coachEntriesTitle");
+  const tbody = $("coachEntriesBody");
+  show("coachEntriesCard");
+  title.textContent = `Einträge von ${name} (${code}) – letzte 30 Läufe + Stabi-Einheiten`;
+  tbody.innerHTML = "<tr><td colspan='6'>Lade Einträge...</td></tr>";
+
+  try {
+    const runsSnap = await db.collection("runs")
+      .where("playerCode","==",code)
+      .orderBy("date","desc")
+      .limit(30)
+      .get();
+
+    const stabiSnap = await db.collection("stabiSessions")
+      .where("playerCode","==",code)
+      .orderBy("date","desc")
+      .limit(30)
+      .get();
+
+    const items = [];
+
+    runsSnap.forEach(doc=>{
+      const d = doc.data();
+      items.push({
+        id: doc.id,
+        collection: "runs",
+        type: "Lauf",
+        date: d.date || "",
+        valueText: (d.km || 0).toFixed(1) + " km",
+        rawKm: d.km || 0,
+        rawRounds: null,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious,
+        playerCode: code,
+        createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
+      });
+    });
+
+    stabiSnap.forEach(doc=>{
+      const d = doc.data();
+      items.push({
+        id: doc.id,
+        collection: "stabiSessions",
+        type: "Stabi",
+        date: d.date || "",
+        valueText: (d.rounds || 1) + " Runde(n)",
+        rawKm: null,
+        rawRounds: d.rounds || 1,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious,
+        playerCode: code,
+        createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
+      });
+    });
+
+    items.sort((a,b)=> b.createdAt - a.createdAt);
+    const latest = items.slice(0,30);
+
+    if(latest.length === 0){
+      tbody.innerHTML = "<tr><td colspan='6'>Keine Einträge vorhanden.</td></tr>";
+      return;
+    }
+
+    tbody.innerHTML = "";
+    latest.forEach(item=>{
+      const tr = document.createElement("tr");
+      tr.dataset.id = item.id;
+      tr.dataset.collection = item.collection;
+      tr.dataset.type = item.type;
+      tr.dataset.playerCode = item.playerCode;
+      if(item.rawKm !== null) tr.dataset.km = item.rawKm;
+      if(item.rawRounds !== null) tr.dataset.rounds = item.rawRounds;
+      tr.innerHTML = `
+        <td>${item.date}</td>
+        <td>${item.type}</td>
+        <td>${item.valueText}</td>
+        <td>${item.comment ? item.comment.replace(/</g,"&lt;") : ""}</td>
+        <td>${item.suspicious ? "⚠" : ""}</td>
+        <td>
+          <button class="entry-btn entry-edit">Bearbeiten</button>
+          <button class="entry-btn entry-delete">Löschen</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch(e){
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden der Einträge.</td></tr>";
+  }
+}
+
+$("coachEntriesBody").addEventListener("click", async (e)=>{
+  const btn = e.target;
+  const tr = btn.closest("tr");
+  if(!tr) return;
+
+  const id = tr.dataset.id;
+  const collection = tr.dataset.collection;
+  const type = tr.dataset.type;
+  const playerCode = tr.dataset.playerCode;
+  const msg = $("coachActionMessage");
+
+  if(btn.classList.contains("entry-edit")){
+    if(type === "Lauf"){
+      const oldKm = parseFloat(tr.dataset.km || "0");
+      const newKmStr = prompt("Neue Kilometer für diesen Lauf:", oldKm);
+      if(newKmStr === null) return;
+      const newKm = parseFloat(newKmStr.toString().replace(",", "."));
+      if(!(newKm > 0)){
+        alert("Ungültige km-Zahl.");
+        return;
+      }
+      const diffKm = newKm - oldKm;
+      const diffXp = Math.round(diffKm * XP_PER_KM);
+      const suspicious = newKm > 25;
+
+      try {
+        await db.collection("runs").doc(id).update({
+          km: newKm,
+          suspicious: suspicious
+        });
+        if(diffKm !== 0 || diffXp !== 0){
+          await db.collection("players").doc(playerCode).update({
+            totalKm: firebase.firestore.FieldValue.increment(diffKm),
+            xp: firebase.firestore.FieldValue.increment(diffXp)
+          });
+        }
+        msg.textContent = "Lauf-Eintrag aktualisiert.";
+        await loadPlayerEntries(playerCode, currentEditPlayerName || "");
+        await loadCoachView();
+      } catch(e){
+        console.error(e);
+        msg.textContent = "Fehler beim Bearbeiten des Laufes.";
+      }
+    } else if(type === "Stabi"){
+      const oldRounds = parseInt(tr.dataset.rounds || "1");
+      const newRoundsStr = prompt("Neue Rundenzahl für diese Stabi-Einheit:", oldRounds);
+      if(newRoundsStr === null) return;
+      const newRounds = parseInt(newRoundsStr);
+      if(!(newRounds > 0)){
+        alert("Ungültige Rundenzahl.");
+        return;
+      }
+      const suspicious = newRounds > 3;
+      try {
+        await db.collection("stabiSessions").doc(id).update({
+          rounds: newRounds,
+          suspicious: suspicious
+        });
+        msg.textContent = "Stabi-Eintrag aktualisiert.";
+        await loadPlayerEntries(playerCode, currentEditPlayerName || "");
+        await loadCoachView();
+      } catch(e){
+        console.error(e);
+        msg.textContent = "Fehler beim Bearbeiten der Stabi-Einheit.";
+      }
+    }
+  }
+
+  if(btn.classList.contains("entry-delete")){
+    if(!confirm("Diesen Eintrag wirklich löschen? (Km/Stabi/XP werden angepasst)")) return;
+    try {
+      if(type === "Lauf"){
+        const oldKm = parseFloat(tr.dataset.km || "0");
+        const xpDiff = -Math.round(oldKm * XP_PER_KM);
+        await db.collection("runs").doc(id).delete();
+        await db.collection("players").doc(playerCode).update({
+          totalKm: firebase.firestore.FieldValue.increment(-oldKm),
+          xp: firebase.firestore.FieldValue.increment(xpDiff)
+        });
+      } else if(type === "Stabi"){
+        const xpDiff = -XP_PER_STABI;
+        await db.collection("stabiSessions").doc(id).delete();
+        await db.collection("players").doc(playerCode).update({
+          stabiCount: firebase.firestore.FieldValue.increment(-1),
+          xp: firebase.firestore.FieldValue.increment(xpDiff)
+        });
+      }
+      msg.textContent = "Eintrag gelöscht.";
+      await loadPlayerEntries(playerCode, currentEditPlayerName || "");
+      await loadCoachView();
+    } catch(e){
+      console.error(e);
+      msg.textContent = "Fehler beim Löschen des Eintrags.";
     }
   }
 });
@@ -1164,6 +1694,7 @@ async function loadActivityFeed(){
         date: d.date,
         km: d.km || 0,
         rounds: null,
+        suspicious: !!d.suspicious,
         createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
       });
     });
@@ -1177,6 +1708,7 @@ async function loadActivityFeed(){
         date: d.date,
         km: null,
         rounds: d.rounds || 1,
+        suspicious: !!d.suspicious,
         createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
       });
     });
@@ -1195,9 +1727,10 @@ async function loadActivityFeed(){
       div.className = "activity-item";
 
       const icon = item.type === "run" ? "🏃‍♂️" : "💪";
+      const warn = item.suspicious ? " ⚠" : "";
       const mainText = item.type === "run"
-        ? `${item.playerName} ist ${item.km.toFixed(1)} km gelaufen.`
-        : `${item.playerName} hat Stabi gemacht (${item.rounds} Runde(n)).`;
+        ? `${item.playerName} ist ${item.km.toFixed(1)} km gelaufen.${warn}`
+        : `${item.playerName} hat Stabi gemacht (${item.rounds} Runde(n)).${warn}`;
 
       const dateText = item.date || "";
 

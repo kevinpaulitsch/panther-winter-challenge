@@ -904,6 +904,16 @@
   </div>
 
 </div><!-- container -->
+<h3 style="margin-top:40px;">🔍 Gruppen-Vergleich – Black vs. White</h3>
+<div id="groupcompare" style="
+    background:#111;
+    padding:15px;
+    border-radius:8px;
+    margin-top:10px;
+    border:1px solid #333;
+    color:white;">
+    <p>Loading Daten…</p>
+</div>
 
 <script>
 /* ===== KONFIG ===== */
@@ -2638,7 +2648,37 @@ window.addEventListener("load", async () => {
   setupDuelEndInputLimits();
   loadDuelsAdmin();
 });
-</script>
+ /* ============================================
+   GRUPPEN-VERGLEICH (BLACK VS WHITE)
+   ============================================ */
 
+async function renderGroupCompare() {
+  const box = document.getElementById("groupcompare");
+  if (!box) return;
+
+  try {
+    const snap = await getDocs(collection(db, "players"));
+    const players = [];
+    snap.forEach((d) => players.push({ id: d.id, ...d.data() }));
+
+    const black = players.filter((p) => p.birthYear === 2012 || p.birthYear === 2013);
+    const white = players.filter((p) => p.birthYear === 2014 || p.birthYear === 2015);
+
+    const avg = (arr, field) =>
+      arr.length ? (arr.reduce((s, x) => s + (x[field] || 0), 0) / arr.length).toFixed(2) : 0;
+
+    box.innerHTML = `
+      <p><b>Black</b>: Ø KM: ${avg(black, "km")}, Ø Stabi: ${avg(black, "stabiCount")}</p>
+      <p><b>White</b>: Ø KM: ${avg(white, "km")}, Ø Stabi: ${avg(white, "stabiCount")}</p>
+    `;
+  } catch (err) {
+    box.innerHTML = "<p style='color:red'>Fehler beim Laden</p>";
+  }
+}
+
+renderGroupCompare();
+/* ============================================ */
+
+</script>
 </body>
 </html>

@@ -427,7 +427,7 @@
 <body>
 <div class="app-container">
 
-  <!-- LOGIN VIEW -->
+   <!-- LOGIN VIEW -->
   <div id="loginView" class="card">
     <div class="header-bar">
       <img src="svtillmitsch-logo.png" alt="SV Tillmitsch Logo" class="logo">
@@ -578,8 +578,7 @@
       <div id="calendarMonthLabel" style="margin-top:8px; font-weight:600;"></div>
       <div id="calendarGrid" class="calendar-grid"></div>
     </div>
-
-    <!-- Leaderboard -->
+     <!-- Leaderboard -->
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3>Rangliste</h3>
@@ -753,7 +752,6 @@
         <div id="coachChallengeSummary" class="small-text" style="margin-top:4px;"></div>
         <div id="coachAwardSummary" class="small-text" style="margin-top:4px;"></div>
       </div>
-
       <!-- Team Quest Config -->
       <div style="margin-bottom:12px;">
         <h3>Team Quest einstellen</h3>
@@ -785,7 +783,7 @@
             <input type="date" id="teamQuestEndInput">
           </div>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px%;">
           <button id="teamQuestSaveBtn" class="secondary small">Team Quest speichern</button>
           <button id="teamQuestLoadBtn" class="secondary small">Team Quest laden</button>
         </div>
@@ -836,9 +834,7 @@
         <thead>
           <tr>
             <th>Code</th>
-            <th>Name</th>
-            <th>Jahrg.</th>
-            <th>Gruppe</th>
+            <th>Name / Jahrgang / Gruppe</th>
             <th>Km</th>
             <th>Stabi</th>
             <th>XP</th>
@@ -925,7 +921,7 @@ const DEFAULT_GOAL = 80;
 
 /* Challenge-Ende und Duell-Regeln */
 const CHALLENGE_END_DATE = "2026-02-02";
-const MAX_DUEL_DAYS = 7; // max. 7 Tage
+const MAX_DUEL_DAYS = 7; // max. 7 Tage (0–6 Differenz)
 const MAX_PENDING_DUELS_PER_PLAYER = 3;
 
 /* XP-System */
@@ -948,6 +944,13 @@ const $ = id => document.getElementById(id);
 function show(id){ $(id).style.display=""; }
 function hide(id){ $(id).style.display="none"; }
 
+/* ===== Alt vs Jung: Gruppe aus Jahrgang ===== */
+function groupFromYear(year){
+  if(year === 2012 || year === 2013) return "black"; // alt
+  if(year === 2014 || year === 2015) return "white"; // jung
+  return null;
+}
+
 /* ===== Hilfsfunktionen Datum ===== */
 function todayDateString(){
   return new Date().toISOString().slice(0,10);
@@ -966,27 +969,12 @@ function daysBetweenStr(startStr, endStr){
   return daysBetween(a,b);
 }
 
-/* ===== Gruppe aus Jahrgang ===== */
-function getGroupFromBirthYear(year){
-  if(!year) return null;
-  if(year === 2012 || year === 2013) return "black"; // Alt
-  if(year === 2014 || year === 2015) return "white"; // Jung
-  return null;
-}
-
-function getGroupLabel(group){
-  if(group === "black") return "Alt (Black)";
-  if(group === "white") return "Jung (White)";
-  return "";
-}
-
 /* ===== XP-Tier ===== */
 function getXpTier(xp){
   if(xp >= 800) return {emoji:"🟡", name:"Gold"};
   if(xp >= 300) return {emoji:"⚪", name:"Silber"};
   return {emoji:"🟤", name:"Bronze"};
 }
-
 /* ===== PLAYER LOGIN ===== */
 async function loginWithCode(){
   const code = $("loginCode").value.trim().toUpperCase();
@@ -1000,19 +988,23 @@ async function loginWithCode(){
   try {
     let doc = await db.collection("players").doc(code).get();
     if(!doc.exists){
-      // Neuer Spieler: Name + Jahrgang abfragen
       let name = prompt("Neuer Panther-Code. Name eingeben:");
       if(!name){
         msg.textContent="Keine Eingabe.";
         return;
       }
-      let birthYearStr = prompt("Bitte deinen Jahrgang wählen (2012, 2013, 2014 oder 2015):");
-      let birthYear = parseInt(birthYearStr,10);
-      if(![2012,2013,2014,2015].includes(birthYear)){
-        msg.textContent = "Ungültiger Jahrgang. Gültig sind 2012, 2013, 2014 oder 2015.";
+      let yearStr = prompt("In welchem Jahr bist du geboren? (2012, 2013, 2014 oder 2015)");
+      if(!yearStr){
+        msg.textContent = "Kein Jahrgang eingegeben.";
         return;
       }
-      const group = getGroupFromBirthYear(birthYear);
+      let birthYear = parseInt(yearStr, 10);
+      const validYears = [2012, 2013, 2014, 2015];
+      if(!validYears.includes(birthYear)){
+        msg.textContent = "Bitte 2012, 2013, 2014 oder 2015 eingeben.";
+        return;
+      }
+      const group = groupFromYear(birthYear);
 
       await db.collection("players").doc(code).set({
         code,
@@ -1025,6 +1017,7 @@ async function loginWithCode(){
         xp: 0,
         avatarStyle: "basic"
       });
+
       currentPlayer = {
         code,
         name,
@@ -1042,26 +1035,14 @@ async function loginWithCode(){
       if(currentPlayer.goalKm === undefined) currentPlayer.goalKm = DEFAULT_GOAL;
       if(!currentPlayer.avatarStyle) currentPlayer.avatarStyle = "basic";
 
-      // Falls Jahrgang fehlt: einmalig nachholen
-      if(currentPlayer.birthYear === undefined){
-        let birthYearStr = prompt("Bitte einmal deinen Jahrgang eingeben (2012, 2013, 2014 oder 2015):");
-        let birthYear = parseInt(birthYearStr,10);
-        if(![2012,2013,2014,2015].includes(birthYear)){
-          msg.textContent = "Ungültiger Jahrgang. Login abgebrochen.";
-          return;
-        }
-        const group = getGroupFromBirthYear(birthYear);
-        await db.collection("players").doc(code).update({
-          birthYear,
-          group
-        });
-        currentPlayer.birthYear = birthYear;
-        currentPlayer.group = group;
-      } else if(!currentPlayer.group){
-        const group = getGroupFromBirthYear(currentPlayer.birthYear);
-        if(group){
-          await db.collection("players").doc(code).update({ group });
-          currentPlayer.group = group;
+      if(currentPlayer.birthYear && !currentPlayer.group){
+        currentPlayer.group = groupFromYear(currentPlayer.birthYear);
+        try {
+          await db.collection("players").doc(code).update({
+            group: currentPlayer.group
+          });
+        } catch(e){
+          console.warn("Konnte Gruppe nicht aktualisieren:", e);
         }
       }
     }
@@ -1463,7 +1444,6 @@ function setupDuelEndInputLimits(){
     input.value = maxDate;
   }
 }
-
 /* ===== DASHBOARD ===== */
 async function refreshDashboard(){
   const playersSnap = await db.collection("players").get();
@@ -1475,9 +1455,6 @@ async function refreshDashboard(){
     if(p.xp === undefined) p.xp = 0;
     if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
     if(!p.avatarStyle) p.avatarStyle = "basic";
-    if(p.birthYear && !p.group){
-      p.group = getGroupFromBirthYear(p.birthYear);
-    }
     teamKm += p.totalKm || 0;
     players.push(p);
   });
@@ -1485,13 +1462,10 @@ async function refreshDashboard(){
   let me = players.find(p=>p.code===currentPlayer.code);
   if(me){ currentPlayer = me; }
 
-  $("welcomeText").textContent = "Servus, " + currentPlayer.name + " 🐾";
-
-  let groupLabel = getGroupLabel(currentPlayer.group);
-  let extraInfo = "";
-  if(currentPlayer.birthYear) extraInfo += " · Jahrgang " + currentPlayer.birthYear;
-  if(groupLabel) extraInfo += " · Gruppe: " + groupLabel;
-  $("playerCodeLabel").textContent = "Code: " + currentPlayer.code + extraInfo;
+  const yearText = currentPlayer.birthYear ? ` · Jahrgang ${currentPlayer.birthYear}` : "";
+  const groupText = currentPlayer.group ? ` · Gruppe ${currentPlayer.group}` : "";
+  $("welcomeText").textContent = "Servus, " + currentPlayer.name + " 🐾" + yearText + groupText;
+  $("playerCodeLabel").textContent = "Code: " + currentPlayer.code;
 
   const km = currentPlayer.totalKm || 0;
   const goal = currentPlayer.goalKm || DEFAULT_GOAL;
@@ -1546,11 +1520,13 @@ async function refreshDashboard(){
     if(p.avatarStyle === "gold") styleEmoji = "👑 ";
     if(p.avatarStyle === "night") styleEmoji = "🌙 ";
 
+    const yText = p.birthYear ? ` (JG ${p.birthYear}${p.group ? " · " + p.group : ""})` : "";
+
     let tr = document.createElement("tr");
     if(p.code===currentPlayer.code) tr.classList.add("highlight-row");
     tr.innerHTML = `
       <td>${i+1}.</td>
-      <td>${styleEmoji}${p.name}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
+      <td>${styleEmoji}${p.name}${yText}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
       <td>${(p.totalKm||0).toFixed(1)}</td>
       <td>${p.stabiCount||0}</td>
       <td>${xpP}</td>
@@ -1594,266 +1570,307 @@ $("savePersonalGoalBtn").onclick = async ()=>{
 };
 
 /* ===== LAUF SPEICHERN ===== */
-$("saveRunBtn").onclick = async ()=>{
-  if(!currentPlayer) return;
-  let date = $("runDate").value;
-  let km   = parseFloat($("runKm").value || 0);
+$("saveRunBtn").onclick = async () => {
+  if (!currentPlayer) return;
+  const date = $("runDate").value || todayDateString();
+  const km = parseFloat($("runKm").value || "0");
+  const time = $("runTime").value ? parseInt($("runTime").value, 10) : null;
+  const comment = $("runComment").value.trim();
+  const msg = $("runMessage");
+  msg.textContent = "";
 
-  if(!date || km <= 0){
-    $("runMessage").textContent = "Datum + Kilometer eingeben.";
+  if (!(km > 0)) {
+    msg.textContent = "Bitte Kilometer eingeben.";
     return;
   }
 
   const suspicious = km > 25;
 
   try {
-    await db.collection("runs").add({
+    const batch = db.batch();
+    const runRef = db.collection("runs").doc();
+    batch.set(runRef, {
       playerCode: currentPlayer.code,
       date,
       km,
-      time: parseInt($("runTime").value || 0),
-      comment: $("runComment").value || null,
-      suspicious: suspicious,
+      time: time || null,
+      comment,
+      suspicious,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    const playerRef = db.collection("players").doc(currentPlayer.code);
     const xpGain = Math.round(km * XP_PER_KM);
-
-    await db.collection("players").doc(currentPlayer.code).update({
+    batch.update(playerRef, {
       totalKm: firebase.firestore.FieldValue.increment(km),
       xp: firebase.firestore.FieldValue.increment(xpGain)
     });
 
-    $("runDate").value = "";
+    await batch.commit();
     $("runKm").value = "";
     $("runTime").value = "";
     $("runComment").value = "";
+    msg.textContent = `Lauf gespeichert (+${km.toFixed(1)} km, +${xpGain} XP).` + (suspicious ? " (⚠ wird vom Trainer geprüft)" : "");
 
-    $("runMessage").textContent = `Gespeichert ✔ (+${xpGain} XP${suspicious ? " · ⚠ sehr viele km an einem Tag" : ""})`;
-    setTimeout(()=> $("runMessage").textContent="", 2500);
-
-    refreshDashboard();
-  } catch(e){
+    await refreshDashboard();
+  } catch (e) {
     console.error(e);
-    $("runMessage").textContent = "Fehler beim Speichern.";
+    msg.textContent = "Fehler beim Speichern.";
   }
 };
 
-/* ===== STABI SPEICHERN ===== */
-$("saveStabiBtn").onclick = async ()=>{
-  if(!currentPlayer) return;
-  let date = $("stabiDate").value;
+$("saveStabiBtn").onclick = async () => {
+  if (!currentPlayer) return;
+  const date = $("stabiDate").value || todayDateString();
+  const rounds = parseInt($("stabiRounds").value || "1", 10);
+  const comment = $("stabiComment").value.trim();
+  const msg = $("stabiMessage");
+  msg.textContent = "";
 
-  if(!date){
-    $("stabiMessage").textContent = "Datum eingeben.";
+  if (!(rounds > 0)) {
+    msg.textContent = "Bitte Runden auswählen.";
     return;
   }
 
+  const suspicious = rounds > 3;
+
   try {
-    const existingDay = await db.collection("stabiSessions")
-      .where("playerCode","==",currentPlayer.code)
-      .where("date","==",date)
-      .get();
-    const suspicious = existingDay.size >= 2;
-
-    const rounds = parseInt($("stabiRounds").value || 1);
-
-    await db.collection("stabiSessions").add({
+    const batch = db.batch();
+    const stRef = db.collection("stabiSessions").doc();
+    batch.set(stRef, {
       playerCode: currentPlayer.code,
       date,
       rounds,
-      comment: $("stabiComment").value || null,
-      suspicious: suspicious,
+      comment,
+      suspicious,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    const xpGain = XP_PER_STABI;
-
-    await db.collection("players").doc(currentPlayer.code).update({
+    const playerRef = db.collection("players").doc(currentPlayer.code);
+    const xpGain = rounds * XP_PER_STABI;
+    batch.update(playerRef, {
       stabiCount: firebase.firestore.FieldValue.increment(1),
       xp: firebase.firestore.FieldValue.increment(xpGain)
     });
 
-    $("stabiMessage").textContent = `Gespeichert ✔ (+${xpGain} XP${suspicious ? " · ⚠ sehr viele Stabi-Einheiten an einem Tag" : ""})`;
-    setTimeout(()=> $("stabiMessage").textContent="", 2500);
+    await batch.commit();
+    $("stabiComment").value = "";
+    msg.textContent = `Stabi gespeichert (+${rounds} Runde(n), +${xpGain} XP).` + (suspicious ? " (⚠ wird vom Trainer geprüft)" : "");
 
-    refreshDashboard();
-  } catch(e){
+    await refreshDashboard();
+  } catch (e) {
     console.error(e);
-    $("stabiMessage").textContent = "Fehler beim Speichern.";
+    msg.textContent = "Fehler beim Speichern.";
   }
 };
 
-/* ===== TABS ===== */
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.onclick = ()=>{
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+/* ===== TABS (Lauf / Stabi / Info) ===== */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
     btn.classList.add("active");
-    $(btn.dataset.tab).classList.add("active");
-  };
+    $(tab).classList.add("active");
+  });
 });
 
-/* ===== COACH LOGIN ===== */
-$("coachLoginBtn").onclick = ()=>{
-  const pin = $("coachPin").value.trim();
-  const msg = $("coachLoginMessage");
-  if(!COACH_PINS.includes(pin)){
-    msg.textContent = "Falscher PIN.";
-    return;
-  }
-
-  const name = prompt("Bitte deinen Namen als Coach eingeben (Anzeige):");
-  if(!name){
-    msg.textContent = "Kein Name eingegeben.";
-    return;
-  }
-
-  currentCoachName = name.trim();
-  $("coachNameLabel").textContent = "Eingeloggt als: " + currentCoachName;
-
-  $("coachPin").value = "";
-  msg.textContent = "";
-
-  hide("loginView");
-  hide("appView");
-  show("coachView");
-  loadCoachView();
-};
-
-$("coachBackBtn").onclick = ()=>{
-  hide("coachView");
-  show("loginView");
-};
-
-$("coachRefreshBtn").onclick = loadCoachView;
-
-/* ===== COACH VIEW LADEN ===== */
-async function loadCoachView(){
-  const tbody = $("coachPlayersBody");
-  const msg = $("coachActionMessage");
-  msg.textContent = "";
-  tbody.innerHTML = "<tr><td colspan='8'>Lade Spieler...</td></tr>";
-  hide("coachEntriesCard");
+/* ===== ACTIVITY FEED ===== */
+async function loadActivityFeed() {
+  const container = $("activityFeed");
+  container.innerHTML = "Lade Aktivitäten ...";
 
   try {
-    const snap = await db.collection("players").get();
-    let players = [];
-    snap.forEach(doc=>{
-      const pRaw = doc.data();
-      const p = {...pRaw};
-      if(p.xp === undefined) p.xp = 0;
-      if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
-      if(!p.avatarStyle) p.avatarStyle = "basic";
-      if(p.birthYear && !p.group){
-        p.group = getGroupFromBirthYear(p.birthYear);
-      }
-      players.push(p);
+    const [runsSnap, stabiSnap, playersSnap] = await Promise.all([
+      db.collection("runs").orderBy("createdAt", "desc").limit(30).get(),
+      db.collection("stabiSessions").orderBy("createdAt", "desc").limit(30).get(),
+      db.collection("players").get()
+    ]);
+
+    const playerMap = {};
+    playersSnap.forEach(d => {
+      const p = d.data();
+      playerMap[p.code] = p.name || p.code;
     });
 
-    const suspiciousPlayers = new Set();
-    try {
-      const runsSusp = await db.collection("runs").where("suspicious","==",true).get();
-      runsSusp.forEach(doc=>{
-        const d = doc.data();
-        if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+    const items = [];
+    runsSnap.forEach(doc => {
+      const d = doc.data();
+      items.push({
+        type: "run",
+        date: d.date,
+        createdAt: d.createdAt ? d.createdAt.toMillis() : new Date(d.date + "T00:00:00").getTime(),
+        playerCode: d.playerCode,
+        km: d.km || 0,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
       });
-      const stabiSusp = await db.collection("stabiSessions").where("suspicious","==",true).get();
-      stabiSusp.forEach(doc=>{
-        const d = doc.data();
-        if(d.playerCode) suspiciousPlayers.add(d.playerCode);
-      });
-    } catch(e){
-      console.warn("Fehler suspicious im Coach-View:", e);
-    }
-
-    players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
-
-    let rows = [];
-    players.forEach(p=>{
-      const xp = p.xp || 0;
-      const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
-      const birthYear = p.birthYear || "";
-      const groupLabel = getGroupLabel(p.group);
-
-      rows.push(`
-        <tr data-code="${p.code}" data-name="${p.name}">
-          <td>${p.code}</td>
-          <td>${p.name}${suspiciousMark}</td>
-          <td>${birthYear}</td>
-          <td>${groupLabel}</td>
-          <td>${(p.totalKm||0).toFixed(1)}</td>
-          <td>${p.stabiCount||0}</td>
-          <td>${xp}</td>
-          <td>
-            <button class="coach-btn-reset">Reset</button>
-            <button class="coach-btn-delete">Löschen</button>
-            <button class="coach-btn-details">Einträge</button>
-            <button class="coach-btn-pdf">PDF</button>
-          </td>
-        </tr>
-      `);
     });
 
-    tbody.innerHTML = rows.join("") || "<tr><td colspan='8'>Keine Spieler vorhanden.</td></tr>";
-    await loadChallengeSummary();
-    await loadCoachAwardSummary();
-    await loadTeamQuestSummary();
-    await loadDuelAdminList();
-  } catch(e){
-    console.error(e);
-    tbody.innerHTML = "<tr><td colspan='8'>Fehler beim Laden.</td></tr>";
-  }
-}
+    stabiSnap.forEach(doc => {
+      const d = doc.data();
+      items.push({
+        type: "stabi",
+        date: d.date,
+        createdAt: d.createdAt ? d.createdAt.toMillis() : new Date(d.date + "T00:00:00").getTime(),
+        playerCode: d.playerCode,
+        rounds: d.rounds || 1,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
+      });
+    });
 
-/* ===== COACH-AUSZEICHNUNG-ZUSAMMENFASSUNG ===== */
-async function loadCoachAwardSummary(){
-  const el = $("coachAwardSummary");
-  try {
-    const doc = await db.collection("awards").doc("current").get();
-    if(!doc.exists){
-      el.textContent = "Noch keine Auszeichnung gespeichert.";
+    items.sort((a, b) => b.createdAt - a.createdAt);
+    container.innerHTML = "";
+    if (items.length === 0) {
+      container.textContent = "Noch keine Einträge.";
       return;
     }
-    const a = doc.data();
-    let parts = [];
-    if(a.kmWinnerName){
-      let t = `"${a.kmTitle || "Kilometer König"}" – ${a.kmWinnerName}`;
-      if(a.kmStartDate && a.kmEndDate){
-        t += ` (${a.kmStartDate} bis ${a.kmEndDate})`;
+
+    items.slice(0, 30).forEach(it => {
+      const div = document.createElement("div");
+      div.className = "activity-item";
+      const name = playerMap[it.playerCode] || it.playerCode;
+      const susp = it.suspicious ? " ⚠" : "";
+      let main = "";
+      if (it.type === "run") {
+        main = `<strong>${name}</strong> – ${it.km.toFixed(1)} km`;
+      } else {
+        main = `<strong>${name}</strong> – Stabi (${it.rounds} Runde(n))`;
       }
-      parts.push(t);
-    }
-    if(a.stabiWinnerName){
-      let t2 = `"${a.stabiTitle || "Stabi König"}" – ${a.stabiWinnerName}`;
-      if(a.stabiStartDate && a.stabiEndDate){
-        t2 += ` (${a.stabiStartDate} bis ${a.stabiEndDate})`;
-      }
-      parts.push(t2);
-    }
-    el.textContent = parts.length ? "Aktuelle Auszeichnungen: " + parts.join(" | ") : "Noch keine Auszeichnung gespeichert.";
-  } catch(e){
+      const dateText = it.date || "";
+      div.innerHTML = `
+        <div class="activity-main">
+          <div>${main}${susp}</div>
+          <div>${dateText}</div>
+        </div>
+        <div class="activity-type">${it.type === "run" ? "Lauf" : "Stabi"}${it.comment ? " – " + it.comment : ""}</div>
+      `;
+      container.appendChild(div);
+    });
+  } catch (e) {
     console.error(e);
-    el.textContent = "Fehler beim Laden der Auszeichnung.";
+    container.textContent = "Fehler beim Laden.";
   }
 }
 
-/* ===== TEAM QUEST – COACH ===== */
-$("teamQuestSaveBtn").onclick = async ()=>{
+$("refreshFeedBtn").onclick = loadActivityFeed;
+
+/* ===== CHALLENGE (Coach & Spieler) ===== */
+async function saveChallenge() {
+  const title = $("challengeTitleInput").value.trim();
+  const targetKm = parseFloat($("challengeTargetKmInput").value || "0");
+  const startDate = $("challengeStartInput").value;
+  const endDate = $("challengeEndInput").value;
+  const out = $("coachChallengeSummary");
+
+  if (!title || !(targetKm > 0) || !startDate || !endDate) {
+    out.textContent = "Bitte Titel, Ziel und Zeitraum ausfüllen.";
+    return;
+  }
+
+  try {
+    await db.collection("challenges").doc("current").set({
+      title,
+      targetKm,
+      startDate,
+      endDate
+    });
+    out.textContent = `Challenge gespeichert: "${title}" (${startDate} bis ${endDate}, Ziel: ${targetKm} km pro Spieler).`;
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Speichern.";
+  }
+}
+
+$("challengeSaveBtn").onclick = saveChallenge;
+
+async function loadChallengeCoach() {
+  const out = $("coachChallengeSummary");
+  out.textContent = "";
+  try {
+    const doc = await db.collection("challenges").doc("current").get();
+    if (!doc.exists) {
+      out.textContent = "Keine Challenge gespeichert.";
+      return;
+    }
+    const c = doc.data();
+    $("challengeTitleInput").value = c.title || "";
+    $("challengeTargetKmInput").value = c.targetKm || "";
+    $("challengeStartInput").value = c.startDate || "";
+    $("challengeEndInput").value = c.endDate || "";
+    out.textContent = `Aktive Challenge: "${c.title}" – Ziel: ${c.targetKm} km pro Spieler (${c.startDate} bis ${c.endDate}).`;
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Laden.";
+  }
+}
+
+$("challengeLoadBtn").onclick = loadChallengeCoach;
+
+async function loadCurrentChallengeForPlayer() {
+  const titleEl = $("challengeTitle");
+  const periodEl = $("challengePeriod");
+  const progTextEl = $("challengeProgressText");
+  const fillEl = $("challengeProgressFill");
+  const msgEl = $("challengeMessage");
+
+  titleEl.textContent = "Keine Challenge aktiv";
+  periodEl.textContent = "";
+  progTextEl.textContent = "";
+  fillEl.style.width = "0%";
+  msgEl.textContent = "";
+
+  try {
+    const doc = await db.collection("challenges").doc("current").get();
+    if (!doc.exists) {
+      msgEl.textContent = "Derzeit keine Challenge eingestellt.";
+      return;
+    }
+    const c = doc.data();
+    titleEl.textContent = c.title || "Challenge";
+    periodEl.textContent = `Zeitraum: ${c.startDate} bis ${c.endDate}`;
+
+    const target = c.targetKm || 0;
+    if (!(target > 0)) return;
+
+    const runsSnap = await db.collection("runs")
+      .where("playerCode", "==", currentPlayer.code)
+      .where("date", ">=", c.startDate)
+      .where("date", "<=", c.endDate)
+      .get();
+
+    let sumKm = 0;
+    runsSnap.forEach(d => {
+      sumKm += d.data().km || 0;
+    });
+
+    const pct = Math.min(100, (sumKm / target) * 100);
+    fillEl.style.width = pct + "%";
+    progTextEl.textContent = `Dein Fortschritt: ${sumKm.toFixed(1)} / ${target.toFixed(1)} km (${pct.toFixed(0)}%)`;
+
+    const today = todayDateString();
+    if (today < c.startDate || today > c.endDate) {
+      msgEl.textContent = "Hinweis: du bist außerhalb des Challenge-Zeitraums.";
+    }
+  } catch (e) {
+    console.error(e);
+    msgEl.textContent = "Fehler beim Laden der Challenge.";
+  }
+}
+
+/* ===== TEAM QUEST (Coach) ===== */
+async function saveTeamQuest() {
   const title = $("teamQuestTitleInput").value.trim();
   const desc = $("teamQuestDescInput").value.trim();
   const type = $("teamQuestTypeInput").value;
-  const target = parseFloat($("teamQuestTargetInput").value || 0);
-  const start = $("teamQuestStartInput").value;
-  const end = $("teamQuestEndInput").value;
-  const msg = $("coachActionMessage");
+  const targetValue = parseFloat($("teamQuestTargetInput").value || "0");
+  const startDate = $("teamQuestStartInput").value;
+  const endDate = $("teamQuestEndInput").value;
+  const out = $("coachTeamQuestSummary");
 
-  if(!title || !start || !end || !(target > 0)){
-    msg.textContent = "Team Quest: Titel, Zeitraum und Zielwert nötig.";
-    return;
-  }
-  if(start > end){
-    msg.textContent = "Team Quest: Startdatum darf nicht nach Enddatum liegen.";
+  if (!title || !(targetValue > 0) || !startDate || !endDate) {
+    out.textContent = "Bitte Titel, Ziel und Zeitraum ausfüllen.";
     return;
   }
 
@@ -1862,356 +1879,766 @@ $("teamQuestSaveBtn").onclick = async ()=>{
       title,
       description: desc,
       type,
-      targetValue: target,
-      startDate: start,
-      endDate: end,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      targetValue,
+      startDate,
+      endDate
     });
-    msg.textContent = "Team Quest gespeichert.";
-    await loadTeamQuestSummary();
-  } catch(e){
+    out.textContent = `Team Quest gespeichert: "${title}" (${startDate} bis ${endDate}, Ziel: ${targetValue} ${type === "km" ? "km" : "Stabi"}).`;
+  } catch (e) {
     console.error(e);
-    msg.textContent = "Fehler beim Speichern der Team Quest.";
-  }
-};
-
-$("teamQuestLoadBtn").onclick = ()=>{
-  loadTeamQuestSummary(true);
-};
-
-async function loadTeamQuestSummary(fillForm=false){
-  const el = $("coachTeamQuestSummary");
-  try {
-    const doc = await db.collection("teamQuests").doc("current").get();
-    if(!doc.exists){
-      el.textContent = "Keine Team Quest gesetzt.";
-      if(fillForm){
-        $("teamQuestTitleInput").value = "";
-        $("teamQuestDescInput").value = "";
-        $("teamQuestTypeInput").value = "km";
-        $("teamQuestTargetInput").value = "";
-        $("teamQuestStartInput").value = "";
-        $("teamQuestEndInput").value = "";
-      }
-      return;
-    }
-    const q = doc.data();
-    const typeText = q.type === "stabi" ? "Stabi" : "km";
-    el.textContent = `Aktuelle Team Quest: "${q.title}" – ${q.startDate} bis ${q.endDate}, Ziel: ${q.targetValue} ${typeText}.`;
-
-    if(fillForm){
-      $("teamQuestTitleInput").value = q.title || "";
-      $("teamQuestDescInput").value = q.description || "";
-      $("teamQuestTypeInput").value = q.type || "km";
-      $("teamQuestTargetInput").value = q.targetValue || "";
-      $("teamQuestStartInput").value = q.startDate || "";
-      $("teamQuestEndInput").value = q.endDate || "";
-    }
-  } catch(e){
-    console.error(e);
-    el.textContent = "Fehler beim Laden der Team Quest.";
+    out.textContent = "Fehler beim Speichern.";
   }
 }
 
-/* ===== COACH CSV EXPORT ===== */
-$("coachExportBtn").onclick = async ()=>{
+$("teamQuestSaveBtn").onclick = saveTeamQuest;
+
+async function loadTeamQuestCoach() {
+  const out = $("coachTeamQuestSummary");
+  out.textContent = "";
+  try {
+    const doc = await db.collection("teamQuests").doc("current").get();
+    if (!doc.exists) {
+      out.textContent = "Keine Team Quest gespeichert.";
+      return;
+    }
+    const q = doc.data();
+    $("teamQuestTitleInput").value = q.title || "";
+    $("teamQuestDescInput").value = q.description || "";
+    $("teamQuestTypeInput").value = q.type || "km";
+    $("teamQuestTargetInput").value = q.targetValue || "";
+    $("teamQuestStartInput").value = q.startDate || "";
+    $("teamQuestEndInput").value = q.endDate || "";
+    out.textContent = `Aktive Team Quest: "${q.title}" – Ziel: ${q.targetValue} (${q.type}) (${q.startDate} bis ${q.endDate}).`;
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Laden.";
+  }
+}
+
+$("teamQuestLoadBtn").onclick = loadTeamQuestCoach;
+/* ===== COACH-LOGIN ===== */
+$("coachLoginBtn").onclick = () => {
+  const pin = $("coachPin").value.trim();
+  const msg = $("coachLoginMessage");
+  msg.textContent = "";
+
+  if (!COACH_PINS.includes(pin)) {
+    msg.textContent = "Falscher PIN.";
+    return;
+  }
+  const name = prompt("Coach-Name für Anzeige (z.B. Kevin):") || "Coach";
+  currentCoachName = name;
+  $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
+  hide("loginView");
+  hide("appView");
+  show("coachView");
+  loadCoachPlayers();
+  loadChallengeCoach();
+  loadTeamQuestCoach();
+};
+
+$("coachBackBtn").onclick = () => {
+  currentCoachName = null;
+  hide("coachView");
+  show("loginView");
+};
+
+/* ===== COACH SPIELERLISTE ===== */
+async function loadCoachPlayers() {
+  const tbody = $("coachPlayersBody");
   const msg = $("coachActionMessage");
-  msg.textContent = "CSV wird erstellt...";
+  msg.textContent = "";
+  tbody.innerHTML = "<tr><td colspan='6'>Lade Spieler ...</td></tr>";
 
   try {
     const snap = await db.collection("players").get();
-    let rows = [];
-    rows.push("code;name;birthYear;group;km;stabi;xp");
+    const players = [];
+    snap.forEach(d => players.push(d.data()));
+    players.sort((a, b) => (a.code || "").localeCompare(b.code || ""));
 
-    snap.forEach(doc=>{
-      const p = doc.data();
-      const code = p.code || doc.id;
-      const name = (p.name || "").replace(/;/g, ",");
-      const birthYear = p.birthYear || "";
-      const group = p.group || "";
-      const km = (p.totalKm || 0).toFixed(1).replace(".", ",");
-      const stabi = p.stabiCount || 0;
-      const xp = p.xp || 0;
-      rows.push([code, name, birthYear, group, km, stabi, xp].join(";");
+    tbody.innerHTML = "";
+    if (players.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='6'>Noch keine Spieler.</td></tr>";
+      return;
+    }
+
+    for (const p of players) {
+      const tr = document.createElement("tr");
+      const yearText = p.birthYear ? `Jg. ${p.birthYear}` : "–";
+      const groupText = p.group ? ` (${p.group})` : "";
+      tr.innerHTML = `
+        <td>${p.code || ""}</td>
+        <td>${p.name || ""}<br><span class="small-text">${yearText}${groupText}</span></td>
+        <td>${(p.totalKm || 0).toFixed(1)}</td>
+        <td>${p.stabiCount || 0}</td>
+        <td>${p.xp || 0}</td>
+        <td>
+          <button class="coach-btn-details" data-code="${p.code}" data-name="${p.name || ""}">Details</button>
+          <button class="coach-btn-reset" data-code="${p.code}" data-name="${p.name || ""}">Reset</button>
+          <button class="coach-btn-delete" data-code="${p.code}" data-name="${p.name || ""}">Löschen</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    tbody.querySelectorAll(".coach-btn-reset").forEach(btn => {
+      btn.onclick = () => resetPlayerStats(btn.dataset.code, btn.dataset.name);
+    });
+    tbody.querySelectorAll(".coach-btn-delete").forEach(btn => {
+      btn.onclick = () => deletePlayer(btn.dataset.code, btn.dataset.name);
+    });
+    tbody.querySelectorAll(".coach-btn-details").forEach(btn => {
+      btn.onclick = () => showPlayerEntries(btn.dataset.code, btn.dataset.name);
+    });
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
+  }
+}
+
+$("coachRefreshBtn").onclick = loadCoachPlayers;
+
+async function resetPlayerStats(code, name) {
+  if (!confirm(`Km, Stabi und XP für ${name} (${code}) wirklich zurücksetzen und alle Einträge löschen?`)) return;
+  try {
+    const runsSnap = await db.collection("runs").where("playerCode", "==", code).get();
+    const stSnap = await db.collection("stabiSessions").where("playerCode", "==", code).get();
+    const batch = db.batch();
+    runsSnap.forEach(d => batch.delete(d.ref));
+    stSnap.forEach(d => batch.delete(d.ref));
+    batch.update(db.collection("players").doc(code), {
+      totalKm: 0,
+      stabiCount: 0,
+      xp: 0
+    });
+    await batch.commit();
+    $("coachActionMessage").textContent = "Reset durchgeführt.";
+    await loadCoachPlayers();
+  } catch (e) {
+    console.error(e);
+    $("coachActionMessage").textContent = "Fehler beim Reset.";
+  }
+}
+
+async function deletePlayer(code, name) {
+  if (!confirm(`Spieler ${name} (${code}) komplett löschen (inkl. aller Einträge)?`)) return;
+  try {
+    const runsSnap = await db.collection("runs").where("playerCode", "==", code).get();
+    const stSnap = await db.collection("stabiSessions").where("playerCode", "==", code).get();
+    const batch = db.batch();
+    runsSnap.forEach(d => batch.delete(d.ref));
+    stSnap.forEach(d => batch.delete(d.ref));
+    batch.delete(db.collection("players").doc(code));
+    await batch.commit();
+    $("coachActionMessage").textContent = "Spieler gelöscht.";
+    await loadCoachPlayers();
+  } catch (e) {
+    console.error(e);
+    $("coachActionMessage").textContent = "Fehler beim Löschen.";
+  }
+}
+
+/* ===== EINTRÄGE PRO SPIELER (Coach) ===== */
+async function showPlayerEntries(code, name) {
+  currentEditPlayerCode = code;
+  currentEditPlayerName = name;
+  $("coachEntriesTitle").textContent = `Einträge für ${name} (${code})`;
+  show("coachEntriesCard");
+  const tbody = $("coachEntriesBody");
+  tbody.innerHTML = "<tr><td colspan='6'>Lade Einträge ...</td></tr>";
+
+  try {
+    const [runsSnap, stSnap] = await Promise.all([
+      db.collection("runs").where("playerCode", "==", code).get(),
+      db.collection("stabiSessions").where("playerCode", "==", code).get()
+    ]);
+
+    const entries = [];
+    runsSnap.forEach(doc => {
+      const d = doc.data();
+      entries.push({
+        id: doc.id,
+        type: "run",
+        date: d.date,
+        value: d.km || 0,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
+      });
+    });
+    stSnap.forEach(doc => {
+      const d = doc.data();
+      entries.push({
+        id: doc.id,
+        type: "stabi",
+        date: d.date,
+        value: d.rounds || 1,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
+      });
     });
 
-    const csvContent = rows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    entries.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+    tbody.innerHTML = "";
+    if (entries.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='6'>Keine Einträge.</td></tr>";
+      return;
+    }
+
+    for (const e of entries) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${e.date || ""}</td>
+        <td>${e.type === "run" ? "Lauf" : "Stabi"}</td>
+        <td>${e.type === "run" ? e.value.toFixed(1) + " km" : e.value + " R."}</td>
+        <td>${e.comment}</td>
+        <td>${e.suspicious ? "⚠" : ""}</td>
+        <td>
+          <button class="entry-delete">Löschen</button>
+        </td>
+      `;
+      const delBtn = tr.querySelector(".entry-delete");
+      delBtn.onclick = async () => {
+        if (!confirm("Eintrag wirklich löschen?")) return;
+        try {
+          const col = e.type === "run" ? "runs" : "stabiSessions";
+          await db.collection(col).doc(e.id).delete();
+          await recalcPlayerAggregates(code);
+          showPlayerEntries(code, name);
+        } catch (err) {
+          console.error(err);
+          alert("Fehler beim Löschen.");
+        }
+      };
+      tbody.appendChild(tr);
+    }
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
+  }
+}
+
+/* Aggregatwerte nach Löschen neu berechnen */
+async function recalcPlayerAggregates(code) {
+  const [runsSnap, stSnap] = await Promise.all([
+    db.collection("runs").where("playerCode", "==", code).get(),
+    db.collection("stabiSessions").where("playerCode", "==", code).get()
+  ]);
+
+  let totalKm = 0;
+  let stabiCount = 0;
+  let xp = 0;
+
+  runsSnap.forEach(d => {
+    const r = d.data();
+    const km = r.km || 0;
+    totalKm += km;
+    xp += Math.round(km * XP_PER_KM);
+  });
+
+  stSnap.forEach(d => {
+    const s = d.data();
+    const rounds = s.rounds || 1;
+    stabiCount += 1;
+    xp += rounds * XP_PER_STABI;
+  });
+
+  await db.collection("players").doc(code).update({
+    totalKm,
+    stabiCount,
+    xp
+  });
+}
+
+/* ===== CSV-EXPORT ===== */
+$("coachExportBtn").onclick = async () => {
+  try {
+    const snap = await db.collection("players").get();
+    const rows = [["Code", "Name", "Jahrgang", "Gruppe", "Km", "Stabi", "XP"]];
+    snap.forEach(d => {
+      const p = d.data();
+      rows.push([
+        p.code || "",
+        p.name || "",
+        p.birthYear || "",
+        p.group || "",
+        (p.totalKm || 0).toFixed(1),
+        p.stabiCount || 0,
+        p.xp || 0
+      ]);
+    });
+
+    const csv = rows.map(r => r.map(v => `"${(v + "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const today = todayDateString();
     a.href = url;
-    a.download = `panther_u13_export_${today}.csv`;
+    a.download = "panther_challenge_players.csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-
-    msg.textContent = "CSV exportiert.";
-  } catch(e){
+  } catch (e) {
     console.error(e);
-    msg.textContent = "Fehler beim CSV-Export.";
+    $("coachActionMessage").textContent = "Fehler beim CSV-Export.";
   }
 };
 
-/* ===== COACH-AKTIONEN (Reset / Delete / Details / PDF) ===== */
-$("coachPlayersBody").addEventListener("click", async (e)=>{
-  const target = e.target;
-  const tr = target.closest("tr");
-  if(!tr) return;
-  const code = tr.dataset.code;
-  const name = tr.dataset.name || "";
-  const msg = $("coachActionMessage");
+/* ===== AUSWERTUNG ZEITRAUM & AWARDS ===== */
+$("evalRunBtn").onclick = runEvalForRange;
+$("saveAwardBtn").onclick = saveAwardsForRange;
 
-  if(target.classList.contains("coach-btn-reset")){
-    if(!confirm("Km, Stabi und XP für " + code + " auf 0 setzen? Läufe/Stabi-Einträge bleiben bestehen.")) return;
-    try {
-      await db.collection("players").doc(code).update({
-        totalKm: 0,
-        stabiCount: 0,
-        xp: 0
-      });
-      msg.textContent = "Reset für " + code + " durchgeführt.";
-      loadCoachView();
-    } catch(e){
-      console.error(e);
-      msg.textContent = "Fehler beim Reset.";
-    }
+async function runEvalForRange() {
+  const start = $("evalStartInput").value;
+  const end = $("evalEndInput").value;
+  const label = $("evalRangeLabel");
+  const tbody = $("evalTableBody");
+  const kmText = $("evalAwardKmText");
+  const stText = $("evalAwardStabiText");
+
+  label.textContent = "";
+  tbody.innerHTML = "";
+  kmText.textContent = "";
+  stText.textContent = "";
+  lastEvalAwards = null;
+
+  if (!start || !end) {
+    label.textContent = "Bitte Zeitraum auswählen.";
+    return;
   }
 
-  if(target.classList.contains("coach-btn-delete")){
-    if(!confirm("Spieler " + code + " komplett löschen inkl. Läufen & Stabi-Sessions?")) return;
-    try {
-      const runsSnap = await db.collection("runs").where("playerCode","==",code).get();
-      const batch1 = db.batch();
-      runsSnap.forEach(doc=>batch1.delete(doc.ref));
-      await batch1.commit();
-
-      const stabiSnap = await db.collection("stabiSessions").where("playerCode","==",code).get();
-      const batch2 = db.batch();
-      stabiSnap.forEach(doc=>batch2.delete(doc.ref));
-      await batch2.commit();
-
-      await db.collection("players").doc(code).delete();
-
-      msg.textContent = "Spieler " + code + " und zugehörige Einträge gelöscht.";
-      loadCoachView();
-    } catch(e){
-      console.error(e);
-      msg.textContent = "Fehler beim Löschen.";
-    }
-  }
-
-  if(target.classList.contains("coach-btn-details")){
-    currentEditPlayerCode = code;
-    currentEditPlayerName = name;
-    loadPlayerEntries(code, name);
-  }
-
-  if(target.classList.contains("coach-btn-pdf")){
-    generatePlayerPdf(code, name);
-  }
-});
-
-/* ===== EINZEL-EINTRÄGE LADEN & BEARBEITEN ===== */
-async function loadPlayerEntries(code, name){
-  const card = $("coachEntriesCard");
-  const title = $("coachEntriesTitle");
-  const tbody = $("coachEntriesBody");
-  show("coachEntriesCard");
-  title.textContent = `Einträge von ${name} (${code}) – letzte 30 Läufe + Stabi-Einheiten`;
-  tbody.innerHTML = "<tr><td colspan='6'>Lade Einträge...</td></tr>";
+  label.textContent = `Zeitraum: ${start} bis ${end}`;
+  tbody.innerHTML = "<tr><td colspan='3'>Lade Daten ...</td></tr>";
 
   try {
-    const runsSnap = await db.collection("runs")
-      .where("playerCode","==",code)
-      .orderBy("date","desc")
-      .limit(30)
-      .get();
+    const [playersSnap, runsSnap, stSnap] = await Promise.all([
+      db.collection("players").get(),
+      db.collection("runs").where("date", ">=", start).where("date", "<=", end).get(),
+      db.collection("stabiSessions").where("date", ">=", start).where("date", "<=", end).get()
+    ]);
 
-    const stabiSnap = await db.collection("stabiSessions")
-      .where("playerCode","==",code)
-      .orderBy("date","desc")
-      .limit(30)
-      .get();
-
-    const items = [];
-
-    runsSnap.forEach(doc=>{
-      const d = doc.data();
-      items.push({
-        id: doc.id,
-        collection: "runs",
-        type: "Lauf",
-        date: d.date || "",
-        valueText: (d.km || 0).toFixed(1) + " km",
-        rawKm: d.km || 0,
-        rawRounds: null,
-        comment: d.comment || "",
-        suspicious: !!d.suspicious,
-        playerCode: code,
-        createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
-      });
+    const players = {};
+    playersSnap.forEach(d => {
+      const p = d.data();
+      players[p.code] = {
+        code: p.code,
+        name: p.name || p.code,
+        km: 0,
+        stabi: 0
+      };
     });
 
-    stabiSnap.forEach(doc=>{
+    runsSnap.forEach(doc => {
       const d = doc.data();
-      items.push({
-        id: doc.id,
-        collection: "stabiSessions",
-        type: "Stabi",
-        date: d.date || "",
-        valueText: (d.rounds || 1) + " Runde(n)",
-        rawKm: null,
-        rawRounds: d.rounds || 1,
-        comment: d.comment || "",
-        suspicious: !!d.suspicious,
-        playerCode: code,
-        createdAt: d.createdAt ? d.createdAt.toDate() : new Date(0)
-      });
+      const p = players[d.playerCode];
+      if (p) {
+        p.km += d.km || 0;
+      }
     });
 
-    items.sort((a,b)=> b.createdAt - a.createdAt);
-    const latest = items.slice(0,30);
+    stSnap.forEach(doc => {
+      const d = doc.data();
+      const p = players[d.playerCode];
+      if (p) {
+        p.stabi += 1;
+      }
+    });
 
-    if(latest.length === 0){
-      tbody.innerHTML = "<tr><td colspan='6'>Keine Einträge vorhanden.</td></tr>";
+    const list = Object.values(players);
+    list.sort((a, b) => b.km - a.km);
+
+    tbody.innerHTML = "";
+    if (list.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='3'>Keine Daten.</td></tr>";
       return;
     }
 
-    tbody.innerHTML = "";
-    latest.forEach(item=>{
+    list.forEach(p => {
       const tr = document.createElement("tr");
-      tr.dataset.id = item.id;
-      tr.dataset.collection = item.collection;
-      tr.dataset.type = item.type;
-      tr.dataset.playerCode = item.playerCode;
-      if(item.rawKm !== null) tr.dataset.km = item.rawKm;
-      if(item.rawRounds !== null) tr.dataset.rounds = item.rawRounds;
       tr.innerHTML = `
-        <td>${item.date}</td>
-        <td>${item.type}</td>
-        <td>${item.valueText}</td>
-        <td>${item.comment ? item.comment.replace(/</g,"&lt;") : ""}</td>
-        <td>${item.suspicious ? "⚠" : ""}</td>
-        <td>
-          <button class="entry-btn entry-edit">Bearbeiten</button>
-          <button class="entry-btn entry-delete">Löschen</button>
-        </td>
+        <td>${p.name}</td>
+        <td>${p.km.toFixed(1)}</td>
+        <td>${p.stabi}</td>
       `;
       tbody.appendChild(tr);
     });
-  } catch(e){
+
+    const kmWinner = list.reduce((best, p) => (p.km > (best?.km || 0) ? p : best), null);
+    const stWinner = list.reduce((best, p) => (p.stabi > (best?.stabi || 0) ? p : best), null);
+
+    if (kmWinner && kmWinner.km > 0) {
+      kmText.textContent = `Kilometer-Bester im Zeitraum: ${kmWinner.name} mit ${kmWinner.km.toFixed(1)} km.`;
+    } else {
+      kmText.textContent = "Kein Kilometer-Sieger im Zeitraum.";
+    }
+
+    if (stWinner && stWinner.stabi > 0) {
+      stText.textContent = `Stabi-Bester im Zeitraum: ${stWinner.name} mit ${stWinner.stabi} Stabi-Einheiten.`;
+    } else {
+      stText.textContent = "Kein Stabi-Sieger im Zeitraum.";
+    }
+
+    lastEvalAwards = {
+      startDate: start,
+      endDate: end,
+      kmWinnerName: kmWinner ? kmWinner.name : null,
+      kmValue: kmWinner ? kmWinner.km : 0,
+      stabiWinnerName: stWinner ? stWinner.name : null,
+      stabiValue: stWinner ? stWinner.stabi : 0
+    };
+  } catch (e) {
     console.error(e);
-    tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden der Einträge.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='3'>Fehler beim Laden.</td></tr>";
   }
 }
 
-$("coachEntriesBody").addEventListener("click", async (e)=>{
-  const btn = e.target;
-  const tr = btn.closest("tr");
-  if(!tr) return;
+async function saveAwardsForRange() {
+  if (!lastEvalAwards) {
+    $("awardSaveMessage").textContent = "Bitte zuerst Auswertung durchführen.";
+    return;
+  }
 
-  const id = tr.dataset.id;
-  const collection = tr.dataset.collection;
-  const type = tr.dataset.type;
-  const playerCode = tr.dataset.playerCode;
-  const msg = $("coachActionMessage");
+  const kmTitle = $("awardTitleKmInput").value.trim() || "Kilometer König";
+  const stTitle = $("awardTitleStabiInput").value.trim() || "Stabi König";
+  const out = $("awardSaveMessage");
 
-  if(btn.classList.contains("entry-edit")){
-    if(type === "Lauf"){
-      const oldKm = parseFloat(tr.dataset.km || "0");
-      const newKmStr = prompt("Neue Kilometer für diesen Lauf:", oldKm);
-      if(newKmStr === null) return;
-      const newKm = parseFloat(newKmStr.toString().replace(",", "."));
-      if(!(newKm > 0)){
-        alert("Ungültige km-Zahl.");
-        return;
-      }
-      const diffKm = newKm - oldKm;
-      const diffXp = Math.round(diffKm * XP_PER_KM);
-      const suspicious = newKm > 25;
+  try {
+    await db.collection("awards").doc("current").set({
+      kmTitle,
+      kmWinnerName: lastEvalAwards.kmWinnerName,
+      kmValue: lastEvalAwards.kmValue,
+      kmStartDate: lastEvalAwards.startDate,
+      kmEndDate: lastEvalAwards.endDate,
+      stabiTitle,
+      stabiWinnerName: lastEvalAwards.stabiWinnerName,
+      stabiValue: lastEvalAwards.stabiValue,
+      stabiStartDate: lastEvalAwards.startDate,
+      stabiEndDate: lastEvalAwards.endDate
+    });
+    out.textContent = "Auszeichnungen gespeichert. Spieler sehen sie im Auszeichnungs-Block.";
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Speichern.";
+  }
+}
+/* ===== DUELLE (Coach) ===== */
+$("duelSaveBtn").onclick = async () => {
+  const a = $("duelPlayerAInput").value.trim().toUpperCase();
+  const b = $("duelPlayerBInput").value.trim().toUpperCase();
+  const type = $("duelTypeInput").value;
+  const start = $("duelStartInput").value;
+  const end = $("duelEndInput").value;
+  const msg = $("duelAdminMessage");
+  msg.textContent = "";
 
-      try {
-        await db.collection("runs").doc(id).update({
-          km: newKm,
-          suspicious: suspicious
-        });
-        if(diffKm !== 0 || diffXp !== 0){
-          await db.collection("players").doc(playerCode).update({
-            totalKm: firebase.firestore.FieldValue.increment(diffKm),
-            xp: firebase.firestore.FieldValue.increment(diffXp)
-          });
+  if (!a || !b || !start || !end || a === b) {
+    msg.textContent = "Bitte Spieler, Zeitraum und Typ korrekt angeben (A != B).";
+    return;
+  }
+
+  if (end > CHALLENGE_END_DATE) {
+    msg.textContent = `Enddatum darf nicht nach ${CHALLENGE_END_DATE} liegen.`;
+    return;
+  }
+
+  if (daysBetweenStr(start, end) >= MAX_DUEL_DAYS) {
+    msg.textContent = `Duelle max. ${MAX_DUEL_DAYS} Tage lang.`;
+    return;
+  }
+
+  try {
+    await db.collection("duels").add({
+      playerA: a,
+      playerB: b,
+      type,
+      startDate: start,
+      endDate: end,
+      status: "active",
+      reward: "",
+      createdBy: "coach",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msg.textContent = "Duell gespeichert.";
+    await loadDuelsAdmin();
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Fehler beim Speichern.";
+  }
+};
+
+async function loadDuelsAdmin() {
+  const listEl = $("duelAdminList");
+  listEl.innerHTML = "Lade Duelle ...";
+
+  try {
+    const snap = await db.collection("duels").orderBy("startDate", "desc").get();
+    if (snap.empty) {
+      listEl.textContent = "Keine Duelle.";
+      return;
+    }
+    listEl.innerHTML = "";
+    snap.forEach(doc => {
+      const d = doc.data();
+      const div = document.createElement("div");
+      div.className = "duel-card-admin";
+      div.innerHTML = `
+        <div><strong>${d.playerA}</strong> vs <strong>${d.playerB}</strong> (${d.type === "km" ? "km" : "Stabi"})</div>
+        <div class="small-text">${d.startDate} bis ${d.endDate} – Status: ${d.status || "?"}</div>
+      `;
+      listEl.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    listEl.textContent = "Fehler beim Laden.";
+  }
+}
+
+/* ===== DUELLE (Spieler) – Gegnersliste ===== */
+async function loadPlayersForDuelSelect() {
+  const sel = $("duelOpponentSelect");
+  if (!currentPlayer) return;
+  sel.innerHTML = "";
+  try {
+    const snap = await db.collection("players").get();
+    const players = [];
+    snap.forEach(d => players.push(d.data()));
+    players.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    players.forEach(p => {
+      if (p.code === currentPlayer.code) return;
+      const opt = document.createElement("option");
+      opt.value = p.code;
+      opt.textContent = `${p.name} (${p.code})`;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ===== DUELLE (Spieler) – Duell anlegen ===== */
+$("duelCreateBtn").onclick = async () => {
+  if (!currentPlayer) return;
+  const opponent = $("duelOpponentSelect").value;
+  const type = $("duelTypePlayerInput").value;
+  const reward = $("duelRewardInput").value.trim();
+  const end = $("duelEndPlayerInput").value;
+  const msg = $("duelPlayerMessage");
+  msg.textContent = "";
+
+  if (!opponent || !end) {
+    msg.textContent = "Bitte Gegner und Enddatum wählen.";
+    return;
+  }
+
+  if (end > CHALLENGE_END_DATE) {
+    msg.textContent = `Enddatum darf nicht nach ${CHALLENGE_END_DATE} liegen.`;
+    return;
+  }
+
+  const today = todayDateString();
+  if (daysBetweenStr(today, end) >= MAX_DUEL_DAYS) {
+    msg.textContent = `Duell maximal ${MAX_DUEL_DAYS} Tage lang.`;
+    return;
+  }
+
+  try {
+    const snapPending = await db.collection("duels")
+      .where("status", "in", ["pending", "active"])
+      .where("playerA", "==", currentPlayer.code)
+      .get();
+    const snapPendingB = await db.collection("duels")
+      .where("status", "in", ["pending", "active"])
+      .where("playerB", "==", currentPlayer.code)
+      .get();
+    const pendingCount = snapPending.size + snapPendingB.size;
+    if (pendingCount >= MAX_PENDING_DUELS_PER_PLAYER) {
+      msg.textContent = `Max. ${MAX_PENDING_DUELS_PER_PLAYER} aktive/ausstehende Duelle erlaubt.`;
+      return;
+    }
+  } catch (e) {
+    console.warn("Duell-Limit-Prüfung fehlgeschlagen:", e);
+  }
+
+  try {
+    await db.collection("duels").add({
+      playerA: currentPlayer.code,
+      playerB: opponent,
+      type,
+      reward,
+      startDate: today,
+      endDate: end,
+      status: "pending",
+      createdBy: "player",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msg.textContent = "Duell-Anfrage gesendet.";
+    $("duelRewardInput").value = "";
+    await loadDuelsForPlayer();
+    await loadIncomingDuelsForPlayer();
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Fehler beim Senden der Anfrage.";
+  }
+};
+
+/* ===== DUELLE (Spieler) – Anfragen an dich ===== */
+async function loadIncomingDuelsForPlayer() {
+  const box = $("duelRequestsContainer");
+  if (!currentPlayer) {
+    box.textContent = "Keine offenen Anfragen.";
+    return;
+  }
+
+  try {
+    const snap = await db.collection("duels")
+      .where("playerB", "==", currentPlayer.code)
+      .where("status", "==", "pending")
+      .get();
+
+    if (snap.empty) {
+      box.textContent = "Keine offenen Anfragen.";
+      return;
+    }
+    box.innerHTML = "";
+    snap.forEach(doc => {
+      const d = doc.data();
+      const div = document.createElement("div");
+      div.className = "duel-card";
+      div.innerHTML = `
+        <div class="duel-vs">${d.playerA} fordert dich heraus (${d.type === "km" ? "km" : "Stabi"})</div>
+        <div class="duel-progress small-text">Ende: ${d.endDate} ${d.reward ? "– Einsatz: " + d.reward : ""}</div>
+        <button class="entry-btn entry-edit">Annehmen</button>
+        <button class="entry-btn entry-delete">Ablehnen</button>
+      `;
+      const [acceptBtn, denyBtn] = div.querySelectorAll("button");
+      acceptBtn.onclick = async () => {
+        try {
+          await doc.ref.update({ status: "active" });
+          await loadIncomingDuelsForPlayer();
+          await loadDuelsForPlayer();
+        } catch (e) {
+          console.error(e);
+          alert("Fehler beim Annehmen.");
         }
-        msg.textContent = "Lauf-Eintrag aktualisiert.";
-        await loadPlayerEntries(playerCode, currentEditPlayerName || "");
-        await loadCoachView();
-      } catch(e){
-        console.error(e);
-        msg.textContent = "Fehler beim Bearbeiten des Laufes.";
-      }
-    } else if(type === "Stabi"){
-      const oldRounds = parseInt(tr.dataset.rounds || "1");
-      const newRoundsStr = prompt("Neue Rundenzahl für diese Stabi-Einheit:", oldRounds);
-      if(newRoundsStr === null) return;
-      const newRounds = parseInt(newRoundsStr);
-      if(!(newRounds > 0)){
-        alert("Ungültige Rundenzahl.");
-        return;
-      }
-      const suspicious = newRounds > 3;
-      try {
-        await db.collection("stabiSessions").doc(id).update({
-          rounds: newRounds,
-          suspicious: suspicious
-        });
-        msg.textContent = "Stabi-Eintrag aktualisiert.";
-        await loadPlayerEntries(playerCode, currentEditPlayerName || "");
-        await loadCoachView();
-      } catch(e){
-        console.error(e);
-        msg.textContent = "Fehler beim Bearbeiten der Stabi-Einheit.";
-      }
-    }
+      };
+      denyBtn.onclick = async () => {
+        try {
+          await doc.ref.update({ status: "rejected" });
+          await loadIncomingDuelsForPlayer();
+          await loadDuelsForPlayer();
+        } catch (e) {
+          console.error(e);
+          alert("Fehler beim Ablehnen.");
+        }
+      };
+      box.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    box.textContent = "Fehler beim Laden.";
+  }
+}
+
+/* ===== DUELLE (Spieler) – Übersicht & Fortschritt ===== */
+async function loadDuelsForPlayer() {
+  const box = $("duelContainer");
+  if (!currentPlayer) {
+    box.textContent = "Keine aktiven Duelle.";
+    return;
   }
 
-  if(btn.classList.contains("entry-delete")){
-    if(!confirm("Diesen Eintrag wirklich löschen? (Km/Stabi/XP werden angepasst)")) return;
-    try {
-      if(type === "Lauf"){
-        const oldKm = parseFloat(tr.dataset.km || "0");
-        const xpDiff = -Math.round(oldKm * XP_PER_KM);
-        await db.collection("runs").doc(id).delete();
-        await db.collection("players").doc(playerCode).update({
-          totalKm: firebase.firestore.FieldValue.increment(-oldKm),
-          xp: firebase.firestore.FieldValue.increment(xpDiff)
-        });
-      } else if(type === "Stabi"){
-        const xpDiff = -XP_PER_STABI;
-        await db.collection("stabiSessions").doc(id).delete();
-        await db.collection("players").doc(playerCode).update({
-          stabiCount: firebase.firestore.FieldValue.increment(-1),
-          xp: firebase.firestore.FieldValue.increment(xpDiff)
-        });
-      }
-      msg.textContent = "Eintrag gelöscht.";
-      await loadPlayerEntries(playerCode, currentEditPlayerName || "");
-      await loadCoachView();
-    } catch(e){
-      console.error(e);
-      msg.textContent = "Fehler beim Löschen des Eintrags.";
+  try {
+    const [snapA, snapB] = await Promise.all([
+      db.collection("duels").where("playerA", "==", currentPlayer.code).get(),
+      db.collection("duels").where("playerB", "==", currentPlayer.code).get()
+    ]);
+
+    const duels = [];
+    snapA.forEach(doc => duels.push({ id: doc.id, ref: doc.ref, data: doc.data() }));
+    snapB.forEach(doc => duels.push({ id: doc.id, ref: doc.ref, data: doc.data() }));
+
+    if (duels.length === 0) {
+      box.textContent = "Keine Duelle.";
+      return;
     }
+
+    box.innerHTML = "";
+
+    for (const dObj of duels) {
+      const d = dObj.data;
+      if (!["pending", "active", "finished"].includes(d.status)) continue;
+
+      const opponent = d.playerA === currentPlayer.code ? d.playerB : d.playerA;
+
+      const [aStats, bStats] = await Promise.all([
+        duelStatsForPlayer(d.playerA, d.type, d.startDate, d.endDate),
+        duelStatsForPlayer(d.playerB, d.type, d.startDate, d.endDate)
+      ]);
+
+      let myVal = d.playerA === currentPlayer.code ? aStats.value : bStats.value;
+      let oppVal = d.playerA === currentPlayer.code ? bStats.value : aStats.value;
+
+      const div = document.createElement("div");
+      div.className = "duel-card";
+      const typeLabel = d.type === "km" ? "km" : "Stabi";
+      let statusText = d.status;
+      if (d.status === "pending") statusText = "Ausstehend";
+      if (d.status === "active") statusText = "Aktiv";
+      if (d.status === "finished") statusText = "Beendet";
+
+      div.innerHTML = `
+        <div class="duel-vs">${d.playerA} vs ${d.playerB} (${typeLabel})</div>
+        <div class="duel-progress">
+          Du: ${myVal.toFixed ? myVal.toFixed(1) : myVal} – Gegner: ${oppVal.toFixed ? oppVal.toFixed(1) : oppVal}
+        </div>
+        <div class="small-text">
+          ${d.startDate} bis ${d.endDate} – Status: ${statusText}
+          ${d.reward ? " – Einsatz: " + d.reward : ""}
+        </div>
+      `;
+      box.appendChild(div);
+    }
+  } catch (e) {
+    console.error(e);
+    box.textContent = "Fehler beim Laden.";
   }
+}
+
+async function duelStatsForPlayer(code, type, start, end) {
+  if (type === "km") {
+    const snap = await db.collection("runs")
+      .where("playerCode", "==", code)
+      .where("date", ">=", start)
+      .where("date", "<=", end)
+      .get();
+    let sum = 0;
+    snap.forEach(d => { sum += d.data().km || 0; });
+    return { value: sum };
+  } else {
+    const snap = await db.collection("stabiSessions")
+      .where("playerCode", "==", code)
+      .where("date", ">=", start)
+      .where("date", "<=", end)
+      .get();
+    let count = 0;
+    snap.forEach(() => { count += 1; });
+    return { value: count };
+  }
+}
+
+/* ===== AUTO-LOGIN BEI LADEN ===== */
+window.addEventListener("load", async () => {
+  const saved = localStorage.getItem("panther_code");
+  if (saved) {
+    $("loginCode").value = saved;
+    await loginWithCode();
+  } else {
+    show("loginView");
+  }
+  setupDuelEndInputLimits();
+  loadDuelsAdmin();
 });
+</script>
 
-/* ===== CHALLENGE – COACH ===== */
-$("challengeSaveBtn").onclick = async ()=>{
-  const title = $("challengeTitleInput").value.trim();
-  const start = $("challengeStartInput").value;
-  const end   = $("challengeEndInput").value;
-  const targetKm = parseFloat($("challengeTargetKmInput").value || 0);
-  const msg = $("coachActionMessage");
-
-  if(!title || !start || !end || targetKm <= 0){
-    msg.textContent = "Challenge: Titel, Zeitraum und Ziel-km nötig.";
-    return
+</body>
+</html>

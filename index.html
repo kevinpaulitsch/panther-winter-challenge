@@ -109,7 +109,7 @@
         <label>Panther-Code</label>
         <input type="text" id="loginCode" placeholder="U13-01">
         <button id="loginBtn">Einloggen</button>
-        <button id="clearSavedBtn" class="secondary small">Gespeicherten Code löschen</button>
+        <button id="clearSavedBtn" class="secondary small">Gespeicherter Code löschen</button>
         <div id="loginMessage" class="small-text"></div>
       </div>
 
@@ -271,7 +271,10 @@
       <p class="small-text">
         Hier kannst du alle Spieler sehen, Km/Stabi zurücksetzen oder Spieler komplett löschen (inkl. Läufe & Stabi-Sessions).
       </p>
-      <button id="coachRefreshBtn" class="secondary small">Aktualisieren</button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="coachRefreshBtn" class="secondary small">Aktualisieren</button>
+        <button id="coachExportBtn" class="secondary small">CSV exportieren</button>
+      </div>
       <table class="coach-table">
         <thead>
           <tr>
@@ -516,6 +519,7 @@ $("coachBackBtn").onclick = ()=>{
 
 $("coachRefreshBtn").onclick = loadCoachView;
 
+/* ===== COACH VIEW LADEN ===== */
 async function loadCoachView(){
   const tbody = $("coachPlayersBody");
   const msg = $("coachActionMessage");
@@ -546,6 +550,45 @@ async function loadCoachView(){
     tbody.innerHTML = "<tr><td colspan='5'>Fehler beim Laden.</td></tr>";
   }
 }
+
+/* ===== COACH CSV EXPORT ===== */
+$("coachExportBtn").onclick = async ()=>{
+  const msg = $("coachActionMessage");
+  msg.textContent = "CSV wird erstellt...";
+
+  try {
+    const snap = await db.collection("players").get();
+    let rows = [];
+    // Kopfzeile
+    rows.push(["code","name","km","stabi"].join(";"));
+
+    snap.forEach(doc=>{
+      const p = doc.data();
+      const code = p.code || doc.id;
+      const name = (p.name || "").replace(/;/g, ",");
+      const km = (p.totalKm || 0).toFixed(1).replace(".", ",");
+      const stabi = p.stabiCount || 0;
+      rows.push([code, name, km, stabi].join(";"));
+    });
+
+    const csvContent = rows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const today = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `panther_u13_export_${today}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    msg.textContent = "CSV exportiert.";
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler beim CSV-Export.";
+  }
+};
 
 /* ===== COACH-AKTIONEN (Reset / Delete) ===== */
 $("coachPlayersBody").addEventListener("click", async (e)=>{

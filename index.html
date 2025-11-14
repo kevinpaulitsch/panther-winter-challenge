@@ -3,1091 +3,2649 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SV Tillmitsch – U13 Winter-Challenge</title>
+  <title>Panther Challenge – U13</title>
 
   <style>
     :root {
       --panther-black: #050509;
-      --panther-dark: #101018;
-      --panther-card: #14141f;
-      --panther-gold: #d4aa3c;
-      --panther-gold-soft: #f1d27a;
-      --panther-red: #ff4c4c;
-      --text-muted: #8f90a3;
-      --border-subtle: #262637;
+      --panther-dark: #0b0b12;
+      --panther-gold: #d4af37;
+      --panther-orange: #ff8a00;
+      --bg: radial-gradient(circle at top, #202331 0, #050509 55%, #000000 100%);
+      --card-bg: rgba(10, 10, 16, 0.96);
+      --border-soft: rgba(255, 255, 255, 0.06);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      padding: 0;
-      min-height: 100vh;
+      padding: 16px;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1c1c2b 0, #050509 50%, #000 100%);
-      color: #fff;
-      display: flex;
-      align-items: stretch;
-      justify-content: center;
+      background: var(--bg);
+      color: #f3f3f3;
     }
 
-    .app-shell {
-      width: 100%;
-      max-width: 1200px;
-      margin: 12px auto;
-      padding: 16px 20px 24px;
-      background: linear-gradient(135deg, rgba(10,10,18,0.96), rgba(10,10,14,0.96));
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.05);
-      box-shadow:
-        0 24px 60px rgba(0,0,0,0.75),
-        0 0 40px rgba(212,170,60,0.25);
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    h2, h3 { margin-top: 0; }
+
+    .app-container { max-width: 960px; margin: 0 auto; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+      padding: 18px 22px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border-soft);
+      backdrop-filter: blur(8px);
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+    .header-bar {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .brand-logo {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
-      background: radial-gradient(circle at 20% 0, #fff 0, #444 30%, #000 65%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid rgba(212,170,60,0.8);
-      overflow: hidden;
-    }
-
-    .brand-logo img {
-      width: 80%;
+    .logo {
+      width: 72px;
       height: auto;
-      display: block;
+      object-fit: contain;
+      border: 0;
+      background: transparent;
+      padding: 0;
     }
 
-    .brand-title {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .brand-title h1 {
-      margin: 0;
-      font-size: 22px;
+    .header-title {
+      font-size: 1.4rem;
+      font-weight: 800;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
 
-    .brand-title span {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .tag-pill {
-      padding: 4px 9px;
-      border-radius: 999px;
-      background: rgba(212,170,60,0.12);
-      color: var(--panther-gold-soft);
-      border: 1px solid rgba(212,170,60,0.4);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    main {
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
-      gap: 18px;
-    }
-
-    @media (max-width: 900px) {
-      main {
-        grid-template-columns: 1fr;
-      }
-      .header-right {
-        align-items: flex-start;
-      }
-    }
-
-    .card {
-      background: radial-gradient(circle at top left, #24243a 0, #14141f 28%, #101018 70%);
-      border-radius: 16px;
-      padding: 14px 16px 16px;
-      border: 1px solid var(--border-subtle);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.55);
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .card-header h2 {
-      margin: 0;
-      font-size: 16px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--panther-gold-soft);
-    }
-
-    .card-header small {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .muted {
-      color: var(--text-muted);
-      font-size: 12px;
+    .header-subtitle {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
     }
 
     label {
-      display: block;
-      font-size: 12px;
-      margin-bottom: 4px;
-      color: var(--text-muted);
-    }
-
-    input[type="text"],
-    input[type="password"],
-    input[type="number"],
-    input[type="date"],
-    select {
-      width: 100%;
-      background: #090912;
-      border-radius: 10px;
-      border: 1px solid #2d2d3f;
-      padding: 7px 9px;
-      color: #f8f8ff;
-      font-size: 13px;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-    }
-
-    input:focus, select:focus {
-      border-color: var(--panther-gold);
-      box-shadow: 0 0 0 1px rgba(212,170,60,0.45);
-      background: #11111d;
-    }
-
-    .input-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 7px 12px;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
       font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      background: linear-gradient(135deg, var(--panther-gold), #f6e08c);
-      color: #221400;
-      box-shadow:
-        0 8px 18px rgba(0,0,0,0.7),
-        0 0 18px rgba(212,170,60,0.6);
-      transition: transform 0.08s ease-out, box-shadow 0.1s;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display:block;
+      color: rgba(255,255,255,0.85);
     }
 
-    .btn:hover {
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border:1px solid rgba(255,255,255,0.12);
+      font-size: 0.95rem;
+      margin-top: 3px;
+      background: rgba(7,7,12,0.9);
+      color:#f5f5f5;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: rgba(255,255,255,0.45);
+    }
+
+    textarea { min-height: 60px; resize: vertical; }
+
+    button {
+      background: linear-gradient(135deg, var(--panther-gold), var(--panther-orange));
+      color: #000;
+      border:none;
+      border-radius:999px;
+      padding: 9px 16px;
+      margin-top:12px;
+      cursor:pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      filter: brightness(1.05);
       transform: translateY(-1px);
-      box-shadow:
-        0 10px 24px rgba(0,0,0,0.85),
-        0 0 25px rgba(212,170,60,0.9);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.7);
     }
 
-    .btn:active {
-      transform: translateY(0);
-      box-shadow:
-        0 4px 12px rgba(0,0,0,0.6),
-        0 0 14px rgba(212,170,60,0.6);
-    }
-
-    .btn-ghost {
+    button.secondary {
       background: transparent;
-      border: 1px solid #343447;
-      color: #e3e3ff;
-      box-shadow: none;
-      text-transform: none;
-      letter-spacing: 0.02em;
-      font-weight: 500;
-      padding-inline: 10px;
+      color:#f5f5f5;
+      border:1px solid rgba(255,255,255,0.2);
+      box-shadow:none;
     }
 
-    .btn-ghost:hover {
-      border-color: var(--panther-gold);
-      box-shadow: 0 0 18px rgba(212,170,60,0.4);
+    button.secondary:hover {
+      background: rgba(255,255,255,0.07);
+      transform:none;
+      box-shadow:none;
     }
 
-    .btn-sm {
-      padding: 5px 9px;
-      font-size: 11px;
+    button.small { padding: 5px 10px; font-size: 0.8rem; }
+
+    .flex-row {
+      display:flex;
+      gap:20px;
+      flex-wrap:wrap;
+      align-items:flex-start;
+    }
+
+    .flex-grow { flex:1; }
+
+    .progress-bar {
+      height: 12px;
+      background: rgba(255,255,255,0.06);
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:4px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg,var(--panther-gold),var(--panther-orange));
+      width:0%;
+      transition:width .3s;
+    }
+
+    .leaderboard-table,
+    .coach-table {
+      width:100%;
+      border-collapse:collapse;
+      margin-top:8px;
+      font-size:0.86rem;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td,
+    .coach-table th,
+    .coach-table td {
+      padding:6px 4px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+
+    .leaderboard-table th,
+    .coach-table th {
+      font-weight:700;
+      color: rgba(255,255,255,0.7);
+      text-transform:uppercase;
+      font-size:0.75rem;
+    }
+
+    .highlight-row {
+      background: linear-gradient(90deg, rgba(212,175,55,0.18), rgba(255,138,0,0.12));
+      font-weight:600;
+    }
+
+    .tabs {
+      display:flex;
+      gap:6px;
+      margin-bottom:8px;
+      flex-wrap:wrap;
+      background: rgba(255,255,255,0.03);
+      padding:4px;
+      border-radius:999px;
+    }
+
+    .tab-btn {
+      flex:1;
+      padding:6px 8px;
+      text-align:center;
+      border:none;
+      border-radius:999px;
+      background:transparent;
+      cursor:pointer;
+      font-size:0.85rem;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg,var(--panther-gold),var(--panther-orange));
+      color:#000;
+      font-weight:700;
+    }
+
+    .tab-content { display:none; margin-top:8px; }
+    .tab-content.active { display:block; }
+
+    .small-text {
+      font-size:0.78rem;
+      color: rgba(255,255,255,0.6);
+      margin-top:4px;
+    }
+
+    .badge-list {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:6px;
+    }
+
+    .badge {
+      font-size:0.75rem;
+      padding:3px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.08);
+      border:1px solid rgba(212,175,55,0.5);
+      display:flex;
+      align-items:center;
+      gap:4px;
+    }
+
+    .badge span.icon {
+      font-size:0.9rem;
     }
 
     .pill {
-      display: inline-flex;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      background: rgba(255,255,255,0.05);
-      color: var(--text-muted);
+      display:inline-block;
+      padding:2px 7px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.06);
+      font-size:0.75rem;
+      margin-right:6px;
+      color: var(--panther-gold);
+      border:1px solid rgba(212,175,55,0.5);
     }
 
-    .pill.green {
-      background: rgba(80,210,120,0.12);
-      color: #7ae3a0;
-      border: 1px solid rgba(80,210,120,0.55);
+    hr {
+      border:none;
+      border-top:1px solid rgba(255,255,255,0.08);
+      margin:10px 0;
     }
 
-    .pill.red {
-      background: rgba(255,76,76,0.1);
-      color: #ffaaaa;
-      border: 1px solid rgba(255,76,76,0.5);
+    .coach-btn-reset,
+    .coach-btn-delete,
+    .coach-btn-details,
+    .coach-btn-pdf {
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:0.75rem;
+      box-shadow:none;
+      border:none;
+      margin-right:3px;
+      margin-top:2px;
     }
 
-    .section-title {
-      margin: 10px 0 6px;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
+    .coach-btn-reset {
+      background:#ffcc00;
+      color:#111;
     }
 
-    .divider {
-      margin: 10px 0;
-      height: 1px;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,0.24),
-        transparent
-      );
+    .coach-btn-delete {
+      background:#cc0000;
+      color:#fff;
     }
 
-    .hidden {
-      display: none !important;
+    .coach-btn-details {
+      background:#555;
+      color:#fff;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
+    .coach-btn-pdf {
+      background:#0ea5e9;
+      color:#000;
     }
 
-    th, td {
-      padding: 4px 6px;
-      text-align: left;
+    .activity-item {
+      padding:6px 8px;
+      border-radius:10px;
+      background: rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      margin-bottom:4px;
+      font-size:0.8rem;
     }
 
-    th {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      border-bottom: 1px solid #24243a;
+    .activity-main {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
     }
 
-    tbody tr:nth-child(even) {
-      background: rgba(255,255,255,0.02);
+    .activity-type {
+      font-size:0.8rem;
+      color:rgba(255,255,255,0.7);
     }
 
-    tbody tr:hover {
-      background: rgba(255,255,255,0.05);
+    .calendar-grid {
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap:4px;
+      margin-top:6px;
+      font-size:0.75rem;
     }
 
-    .right {
-      text-align: right;
+    .calendar-day {
+      padding:4px 0;
+      text-align:center;
+      border-radius:6px;
+      background: rgba(255,255,255,0.03);
     }
 
-    .danger {
-      color: var(--panther-red);
+    .calendar-day.empty {
+      background: transparent;
     }
 
-    .status-line {
-      font-size: 12px;
-      margin-top: 4px;
-      min-height: 16px;
+    .calendar-day.has-activity {
+      background: rgba(255,255,255,0.2);
+      font-weight:600;
     }
 
-    .status-line span {
-      opacity: 0.9;
+    .calendar-day.today {
+      border:1px solid var(--panther-gold);
     }
 
-    .status-error {
-      color: #ff9999;
+    .entry-btn {
+      padding:3px 6px;
+      border-radius:999px;
+      font-size:0.75rem;
+      margin-right:4px;
     }
 
-    .status-ok {
-      color: #7ae3a0;
+    .entry-edit {
+      background:#3b82f6;
+      color:#fff;
+      border:none;
     }
 
-    footer {
-      margin-top: 4px;
-      font-size: 11px;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
+    .entry-delete {
+      background:#b91c1c;
+      color:#fff;
+      border:none;
+    }
+
+    .avatar-options {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:6px;
+    }
+
+    .avatar-option {
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:0.8rem;
+      border:1px solid rgba(255,255,255,0.2);
+      background:rgba(255,255,255,0.04);
+      color:#f5f5f5;
+      cursor:pointer;
+    }
+
+    .avatar-option.selected {
+      border-color: var(--panther-gold);
+      box-shadow:0 0 8px rgba(212,175,55,0.7);
+    }
+
+    .avatar-option.locked {
+      opacity:0.4;
+      cursor:not-allowed;
+    }
+
+    .duel-card {
+      padding:6px 8px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      margin-bottom:6px;
+      font-size:0.8rem;
+    }
+
+    .duel-vs {
+      font-weight:600;
+      margin-bottom:4px;
+    }
+
+    .duel-progress {
+      font-size:0.78rem;
+    }
+
+    .duel-card-admin {
+      padding:6px 8px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      margin-bottom:6px;
+      font-size:0.8rem;
+    }
+
+    @media (max-width: 600px) {
+      .header-title { font-size:1.15rem; }
+      .logo { width:56px; }
+      .flex-row { flex-direction:column; }
     }
   </style>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- jsPDF für PDF-Reports -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
-  <div class="app-shell">
-    <header>
-      <div class="brand">
-        <div class="brand-logo">
-          <!-- Dein Logo im Projektordner: svtillmitsch-logo.png -->
-          <img src="svtillmitsch-logo.png" alt="SV Tillmitsch" />
-        </div>
-        <div class="brand-title">
-          <h1>SV Tillmitsch – U13</h1>
-          <span>Panthers Winter-Challenge · Heimprogramm</span>
-        </div>
+<div class="app-container">
+
+    <!-- LOGIN VIEW -->
+  <div id="loginView" class="card">
+    <div class="header-bar">
+      <img src="svtillmitsch-logo.png" alt="SV Tillmitsch Logo" class="logo">
+      <div>
+        <div class="header-title">SV TILLMITSCH</div>
+        <div class="header-subtitle">Young Panthers U13 · Winter Challenge</div>
+      </div>
+    </div>
+    <hr>
+    <div class="flex-row">
+      <div class="flex-grow">
+        <h3>Spieler-Login</h3>
+        <p class="small-text">Panther-Code eingeben (z.B. U13-01). Beim ersten Mal werden Name & Jahrgang abgefragt.</p>
+        <label>Panther-Code</label>
+        <input type="text" id="loginCode" placeholder="U13-01">
+        <button id="loginBtn">Einloggen</button>
+        <button id="clearSavedBtn" class="secondary small">Gespeicherten Code löschen</button>
+        <div id="loginMessage" class="small-text"></div>
       </div>
 
-      <div class="header-right">
-        <div class="tag-pill">Nur echte Panthers zählen 💪</div>
-        <div>Challenge: 01.12.–02.02. · KM &amp; Stabi sammeln</div>
+      <div class="flex-grow">
+        <h3>Coach-Login</h3>
+        <p class="small-text">PIN: 1234 / 5678 / 9999</p>
+        <label>Coach-PIN</label>
+        <input type="password" id="coachPin" placeholder="PIN">
+        <button id="coachLoginBtn" class="secondary">Coach-Login</button>
+        <div id="coachLoginMessage" class="small-text"></div>
       </div>
-    </header>
-
-    <main>
-      <!-- LINKS: Login & Spieler-Dashboard -->
-      <section class="card">
-        <div class="card-header">
-          <h2>Spieler-Login</h2>
-          <small>Panther-Code &amp; Training eintragen</small>
-        </div>
-
-        <!-- Login-Ansicht -->
-        <div id="loginView">
-          <p class="muted">
-            Gib deinen <b>Panther-Code</b> ein. Beim ersten Login wird dein Name &amp; Jahrgang gespeichert.
-          </p>
-
-          <label for="playerCode">Panther-Code</label>
-          <div class="input-row">
-            <input id="playerCode" type="text" placeholder="z.B. U13-01" autocomplete="off" />
-            <button class="btn" id="playerLoginBtn">Einloggen</button>
-          </div>
-
-          <div class="status-line" id="playerLoginStatus"></div>
-
-          <div class="divider"></div>
-
-          <p class="muted" style="margin-bottom:4px;">
-            <span class="pill green">Tipp</span>  
-            Du kannst dich am Handy einloggen, Training eintragen und später weiter machen.
-          </p>
-
-          <p class="muted">
-            Trainer sehen nur deine Daten – keine fremden Logins nötig.
-          </p>
-        </div>
-
-        <!-- Spieler-Dashboard -->
-        <div id="playerDashboard" class="hidden">
-          <div class="card-header" style="margin-top: -4px;">
-            <h2 id="playerTitle">Hallo Panther</h2>
-            <button class="btn-ghost btn-sm" id="playerLogoutBtn">Logout</button>
-          </div>
-
-          <p class="muted" id="playerInfoLine"></p>
-
-          <h3 class="section-title">Training eintragen</h3>
-
-          <div class="input-row">
-            <div>
-              <label for="sessionDate">Datum</label>
-              <input id="sessionDate" type="date" />
-            </div>
-            <div>
-              <label for="runKm">Laufen (km)</label>
-              <input id="runKm" type="number" min="0" step="0.1" placeholder="z.B. 3,5" />
-            </div>
-          </div>
-
-          <div class="input-row">
-            <div>
-              <label for="stabiUnits">Stabi-Einheiten</label>
-              <input id="stabiUnits" type="number" min="0" step="1" placeholder="z.B. 1" />
-            </div>
-            <div style="display:flex;align-items:flex-end;justify-content:flex-end;">
-              <button class="btn" id="saveSessionBtn">Training speichern</button>
-            </div>
-          </div>
-
-          <div class="status-line" id="playerSaveStatus"></div>
-
-          <div class="divider"></div>
-
-          <h3 class="section-title">Deine Gesamtleistung</h3>
-          <p class="muted" id="playerStatsLine">Lade Daten ...</p>
-        </div>
-      </section>
-
-      <!-- RECHTS: Trainer-Login & Coach-Dashboard -->
-      <section class="card">
-        <div class="card-header">
-          <h2>Coach-Login</h2>
-          <small>Admin-Ansicht nur für Trainer</small>
-        </div>
-
-        <!-- Trainer-Login -->
-        <div id="coachLoginView">
-          <p class="muted">
-            Login mit <b>Coach-PIN</b>. Die PINs sind nur intern im Trainerteam bekannt
-            und werden hier nicht angezeigt.
-          </p>
-
-          <label for="coachPin">Coach-PIN</label>
-          <div class="input-row">
-            <input id="coachPin" type="password" placeholder="PIN eingeben" />
-            <button class="btn" id="coachLoginBtn">Coach-Login</button>
-          </div>
-
-          <div class="status-line" id="coachLoginStatus"></div>
-        </div>
-
-        <!-- Coach-Dashboard -->
-        <div id="coachDashboard" class="hidden">
-          <div class="card-header" style="margin-top:-4px;">
-            <h2>Coach-Admin · U13</h2>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <span class="pill" id="coachNamePill">Coach</span>
-              <button class="btn-ghost btn-sm" id="coachLogoutBtn">Logout</button>
-            </div>
-          </div>
-
-          <p class="muted">
-            Überblick über alle Spieler, Zeitraum-Auswertung und <b>Black vs. White</b> Vergleich.
-          </p>
-
-          <!-- Spieler-Tabelle -->
-          <h3 class="section-title">Spieler-Übersicht (Gesamtwerte)</h3>
-          <div id="coachPlayerTableWrapper" class="muted" style="max-height:220px;overflow:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.06);padding:6px 6px 4px;">
-            <table id="coachPlayerTable">
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Jg</th>
-                  <th class="right">KM</th>
-                  <th class="right">Stabi</th>
-                  <th class="right">XP</th>
-                </tr>
-              </thead>
-              <tbody id="coachPlayerTableBody">
-                <tr><td colspan="6" class="muted">Lade Spieler ...</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Zeitraum-Auswertung -->
-          <div class="divider"></div>
-          <h3 class="section-title">Auswertung Zeitraum</h3>
-
-          <div class="input-row">
-            <div>
-              <label for="rangeFrom">Von (Datum inkl.)</label>
-              <input id="rangeFrom" type="date" />
-            </div>
-            <div>
-              <label for="rangeTo">Bis (Datum inkl.)</label>
-              <input id="rangeTo" type="date" />
-            </div>
-          </div>
-
-          <div style="display:flex;gap:8px;justify-content:flex-start;margin-bottom:6px;">
-            <button class="btn-ghost btn-sm" id="runRangeEvalBtn">Auswertung anzeigen</button>
-            <button class="btn-ghost btn-sm" id="exportCsvBtn">CSV herunterladen</button>
-          </div>
-
-          <div class="status-line" id="rangeStatus"></div>
-
-          <div id="rangeResultWrapper" class="muted" style="max-height:160px;overflow:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.06);padding:6px 6px 4px;margin-top:4px;">
-            <table id="rangeResultTable">
-              <thead>
-                <tr>
-                  <th>Spieler</th>
-                  <th class="right">KM</th>
-                  <th class="right">Stabi</th>
-                </tr>
-              </thead>
-              <tbody id="rangeResultBody">
-                <tr><td colspan="3" class="muted">Noch keine Zeitraum-Auswertung.</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Black vs White -->
-          <div class="divider"></div>
-
-          <h3 class="section-title">Gruppen-Vergleich – Black vs. White</h3>
-          <div id="groupcompare" style="
-              background:#11111a;
-              padding:10px 10px 8px;
-              border-radius:10px;
-              border:1px solid rgba(255,255,255,0.08);
-              font-size:12px;">
-            <p class="muted">Lade Vergleichsdaten ...</p>
-          </div>
-
-          <div class="status-line" id="coachStatus"></div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <span>Speicherung in Firestore (Google) · nur Codes & Trainingsdaten, keine Passwörter.</span>
-      <span>Coach-PINs sind nur im Code hinterlegt – Kinder sehen sie nicht.</span>
-    </footer>
+    </div>
   </div>
 
-  <!-- FIREBASE / APP SCRIPT -->
-  <script type="module">
-    // ----------------------------------------
-    // Firebase-Setup
-    // ----------------------------------------
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import {
-      getFirestore,
-      collection,
-      doc,
-      getDoc,
-      getDocs,
-      setDoc,
-      addDoc,
-      updateDoc,
-      increment,
-    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  <!-- SPIELER-APP -->
+  <div id="appView" style="display:none;">
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAFKhJXx01HEb_kCkdnjkNLo7Y-M7DUSxg",
-      authDomain: "panthers-winter-challenge.firebaseapp.com",
-      projectId: "panthers-winter-challenge",
-      storageBucket: "panthers-winter-challenge.firebasestorage.app",
-      messagingSenderId: "9880532994",
-      appId: "1:9880532994:web:3e53f62fe2043cfca2cf1b"
-    };
+    <!-- Spieler + Team + persönliches Ziel -->
+    <div class="card">
+      <div class="header-bar" style="margin-bottom:4px;">
+        <img src="svtillmitsch-logo.png" alt="SV Tillmitsch Logo" class="logo">
+        <div style="flex:1;">
+          <div class="header-title" style="font-size:1.2rem;">Panther Challenge – U13</div>
+          <div id="playerCodeLabel" class="header-subtitle"></div>
+        </div>
+        <button id="logoutBtn" class="secondary small">Abmelden</button>
+      </div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+      <hr>
 
-    // ----------------------------------------
-    // Helper
-    // ----------------------------------------
-    const $ = (id) => document.getElementById(id);
+      <h3 id="welcomeText">Hallo Panther</h3>
 
-    const todayIso = () => {
-      const d = new Date();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${d.getFullYear()}-${m}-${day}`;
-    };
+      <h3>Dein Fortschritt</h3>
+      <div style="display:flex; justify-content:space-between;">
+        <span>Gelaufene Kilometer</span>
+        <span><strong><span id="playerKm">0</span> / <span id="playerGoalKm">80</span> km</strong></span>
+      </div>
+      <div class="progress-bar"><div id="playerKmFill" class="progress-fill"></div></div>
 
-    const showElement = (id, show = true) => {
-      const el = $(id);
-      if (!el) return;
-      el.classList.toggle("hidden", !show);
-    };
+      <div style="display:flex; justify-content:space-between; margin-top:6px;">
+        <span>Stabi-Einheiten</span>
+        <strong><span id="playerStabiCount">0</span>×</strong>
+      </div>
 
-    const formatNumber = (value, digits = 1) =>
-      (value ?? 0).toLocaleString("de-AT", {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits
+      <div style="display:flex; justify-content:space-between; margin-top:10px; align-items:center;">
+        <span>XP / Level</span>
+        <strong>
+          <span id="playerXp">0</span> XP · Level <span id="playerLevel">1</span>
+          <span id="playerTierLabel" class="pill"></span>
+        </strong>
+      </div>
+
+      <hr>
+
+      <h3>Persönliches Ziel</h3>
+      <p class="small-text">Standard ist 80 km. Du kannst dir hier dein eigenes km-Ziel setzen.</p>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="number" id="personalGoalInput" step="1" style="max-width:120px;" placeholder="z.B. 80">
+        <button id="savePersonalGoalBtn" class="secondary small">Ziel speichern</button>
+      </div>
+      <div class="small-text">Aktuelles Ziel: <span id="personalGoalLabel">80</span> km</div>
+
+      <hr>
+
+      <h3>Mannschaftsziel</h3>
+      <div style="display:flex; justify-content:space-between;">
+        <span>Team-Kilometer</span>
+        <strong><span id="teamKm">0</span> / <span id="teamGoalKm">2200</span> km</strong>
+      </div>
+      <div class="progress-bar"><div id="teamKmFill" class="progress-fill"></div></div>
+
+      <hr>
+
+      <h3>Badges</h3>
+      <div id="badgeContainer" class="badge-list"></div>
+      <div class="small-text">Badges werden automatisch anhand deiner Kilometer, Stabi-Einheiten und XP freigeschaltet.</div>
+    </div>
+
+    <!-- Challenge -->
+    <div class="card">
+      <h3>Aktuelle Challenge</h3>
+      <div id="challengeBox">
+        <div id="challengeTitle" style="font-weight:600;">Keine Challenge aktiv</div>
+        <div id="challengePeriod" class="small-text"></div>
+        <div id="challengeProgressText" class="small-text" style="margin-top:6px;"></div>
+        <div class="progress-bar" style="margin-top:4px;">
+          <div id="challengeProgressFill" class="progress-fill"></div>
+        </div>
+      </div>
+      <div id="challengeMessage" class="small-text" style="margin-top:6px;"></div>
+    </div>
+
+    <!-- Team Quest -->
+    <div class="card">
+      <h3>Team Quest</h3>
+      <div id="teamQuestTitle" style="font-weight:600;">Keine Team Quest aktiv</div>
+      <div id="teamQuestDesc" class="small-text"></div>
+      <div id="teamQuestPeriod" class="small-text"></div>
+      <div id="teamQuestProgressText" class="small-text" style="margin-top:6px;"></div>
+      <div class="progress-bar" style="margin-top:4px;">
+        <div id="teamQuestProgressFill" class="progress-fill"></div>
+      </div>
+      <div id="teamQuestMessage" class="small-text" style="margin-top:6px;"></div>
+    </div>
+
+    <!-- Auszeichnungen -->
+    <div class="card">
+      <h3>Auszeichnungen</h3>
+      <div id="awardBox">
+        <div id="awardKmTitlePlayer" style="font-weight:600;">Noch keine Lauf-Auszeichnung</div>
+        <div id="awardKmSubtitlePlayer" class="small-text"></div>
+        <div style="margin-top:8px;"></div>
+        <div id="awardStabiTitlePlayer" style="font-weight:600;">Noch keine Stabi-Auszeichnung</div>
+        <div id="awardStabiSubtitlePlayer" class="small-text"></div>
+      </div>
+    </div>
+
+    <!-- Avatar & Style -->
+    <div class="card">
+      <h3>Avatar & Style</h3>
+      <p class="small-text">Dein Style in der Rangliste. Manche Styles schaltest du erst mit mehr XP frei.</p>
+      <div id="avatarInfo" class="small-text"></div>
+      <div id="avatarOptions" class="avatar-options"></div>
+    </div>
+
+    <!-- Streak & Kalender -->
+    <div class="card">
+      <h3>Streak & Kalender</h3>
+      <div id="streakText" class="small-text">Noch keine Einträge.</div>
+      <div id="bestStreakText" class="small-text"></div>
+      <div id="calendarMonthLabel" style="margin-top:8px; font-weight:600;"></div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+    </div>
+
+        <!-- Leaderboard -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Rangliste</h3>
+        <button id="refreshBtn" class="secondary small">Aktualisieren</button>
+      </div>
+
+      <table class="leaderboard-table">
+        <thead>
+          <tr><th>Platz</th><th>Spieler</th><th>km</th><th>Stabi</th><th>XP</th></tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+      <p class="small-text">Dein Name ist markiert – jage die anderen Panthers in der Tabelle.</p>
+    </div>
+
+    <!-- Aktivitäts-Feed -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Aktivitäts-Feed</h3>
+        <button id="refreshFeedBtn" class="secondary small">Aktualisieren</button>
+      </div>
+      <p class="small-text">Letzte Läufe und Stabi-Einheiten der Mannschaft.</p>
+      <div id="activityFeed"></div>
+    </div>
+
+    <!-- Duelle -->
+    <div class="card">
+      <h3>Deine Duelle</h3>
+      <p class="small-text">
+        Ein Duell darf maximal 7 Tage dauern. Die gesamte Challenge läuft nur bis 02.02.2026 – danach sind keine neuen Duelle mehr möglich.
+      </p>
+
+      <h4>Duell starten</h4>
+      <label>Gegner auswählen</label>
+      <select id="duelOpponentSelect"></select>
+
+      <label>Disziplin</label>
+      <select id="duelTypePlayerInput">
+        <option value="km">Kilometer</option>
+        <option value="stabi">Stabi-Einheiten</option>
+      </select>
+
+      <label>Belohnung (optional)</label>
+      <input type="text" id="duelRewardInput" maxlength="100" placeholder="z.B. Getränk, Süßigkeit, Extra-Pass">
+
+      <label>Enddatum (max. 7 Tage ab heute, spätestens 02.02.2026)</label>
+      <input type="date" id="duelEndPlayerInput">
+
+      <button id="duelCreateBtn">Duell-Anfrage senden</button>
+      <div id="duelPlayerMessage" class="small-text"></div>
+
+      <hr>
+
+      <h4>Offene Duell-Anfragen an dich</h4>
+      <div id="duelRequestsContainer" class="small-text">Keine offenen Anfragen.</div>
+
+      <hr>
+
+      <h4>Aktive Duelle</h4>
+      <div id="duelContainer" class="small-text">Keine aktiven Duelle.</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="run-tab">Lauf eintragen</button>
+        <button class="tab-btn" data-tab="stabi-tab">Stabi eintragen</button>
+        <button class="tab-btn" data-tab="info-tab">Stabi-Programm</button>
+      </div>
+
+      <!-- Lauf -->
+      <div id="run-tab" class="tab-content active">
+        <h3>Lauf-Einheit</h3>
+        <label>Datum</label>
+        <input type="date" id="runDate">
+        <label>Kilometer</label>
+        <input type="number" id="runKm" step="0.1" placeholder="z.B. 4.5">
+        <label>Zeit (Minuten)</label>
+        <input type="number" id="runTime" placeholder="optional">
+        <label>Kommentar</label>
+        <textarea id="runComment" placeholder="z.B. Runde ums Dorf, locker gelaufen"></textarea>
+        <button id="saveRunBtn">Lauf speichern</button>
+        <div id="runMessage" class="small-text"></div>
+      </div>
+
+      <!-- Stabi -->
+      <div id="stabi-tab" class="tab-content">
+        <h3>Stabi-Einheit</h3>
+        <label>Datum</label>
+        <input type="date" id="stabiDate">
+        <label>Runden</label>
+        <select id="stabiRounds">
+          <option value="1">1 Runde</option>
+          <option value="2">2 Runden</option>
+          <option value="3" selected>3 Runden</option>
+        </select>
+        <label>Kommentar</label>
+        <textarea id="stabiComment" placeholder="z.B. mit Bruder gemacht, war anstrengend"></textarea>
+        <button id="saveStabiBtn">Stabi speichern</button>
+        <div id="stabiMessage" class="small-text"></div>
+      </div>
+
+      <!-- Info -->
+      <div id="info-tab" class="tab-content">
+        <h3>Stabi-Programm</h3>
+        <p class="small-text">2× pro Woche – 3 Runden à 45/15 Sekunden. Saubere Ausführung ist wichtiger als Geschwindigkeit.</p>
+        <div>
+          <div><span class="pill">1</span> Plank – <a href="https://www.youtube.com/watch?v=pSHjTRCQxIw" target="_blank">Video</a></div>
+          <div><span class="pill">2</span> Liegestütz – <a href="https://www.youtube.com/watch?v=_l3ySVKYVJ8" target="_blank">Video</a></div>
+          <div><span class="pill">3</span> Kniebeugen – <a href="https://www.youtube.com/watch?v=aclHkVaku9U" target="_blank">Video</a></div>
+          <div><span class="pill">4</span> Seitstütz – <a href="https://www.youtube.com/watch?v=K2VljzCC16g" target="_blank">Video</a></div>
+          <div><span class="pill">5</span> Crunches – <a href="https://www.youtube.com/watch?v=Xyd_fa5zoEU" target="_blank">Video</a></div>
+          <div><span class="pill">6</span> Superman – <a href="https://www.youtube.com/watch?v=z6PJMT2y8GQ" target="_blank">Video</a></div>
+          <div><span class="pill">7</span> Lunges – <a href="https://www.youtube.com/watch?v=QOVaHwm-Q6U" target="_blank">Video</a></div>
+          <div><span class="pill">8</span> Beinheben – <a href="https://www.youtube.com/watch?v=JB2oyawG9U" target="_blank">Video</a></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- appView -->
+
+  <!-- COACH-ADMIN-VIEW -->
+  <div id="coachView" style="display:none;">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="header-bar" style="margin-bottom:0;">
+          <img src="svtillmitsch-logo.png" alt="SV Tillmitsch Logo" class="logo">
+          <div>
+            <div class="header-title" style="font-size:1.1rem;">Coach-Admin – U13</div>
+            <div id="coachNameLabel" class="header-subtitle"></div>
+          </div>
+        </div>
+        <button id="coachBackBtn" class="secondary small">Zurück</button>
+      </div>
+      <p class="small-text">
+        Übersicht aller Spieler. Km/Stabi/XP zurücksetzen, Spieler löschen, Challenge & Team-Quest, Duelle, Einträge bearbeiten und Auswertungen nach Zeitraum. PDF-Reports nur im Coach-Bereich.
+      </p>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+        <button id="coachRefreshBtn" class="secondary small">Spieler aktualisieren</button>
+        <button id="coachExportBtn" class="secondary small">CSV exportieren</button>
+      </div>
+
+      <!-- Challenge Config -->
+      <div style="margin-bottom:12px;">
+        <h3>Challenge einstellen (pro Spieler – km)</h3>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Titel</label>
+            <input type="text" id="challengeTitleInput" placeholder="z.B. Wochen-Challenge 1">
+          </div>
+          <div>
+            <label>Ziel (km pro Spieler)</label>
+            <input type="number" id="challengeTargetKmInput" step="0.1" style="max-width:120px;">
+          </div>
+        </div>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Start-Datum</label>
+            <input type="date" id="challengeStartInput">
+          </div>
+          <div class="flex-grow">
+            <label>End-Datum</label>
+            <input type="date" id="challengeEndInput">
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+          <button id="challengeSaveBtn" class="secondary small">Challenge speichern</button>
+          <button id="challengeLoadBtn" class="secondary small">Challenge laden</button>
+        </div>
+        <div id="coachChallengeSummary" class="small-text" style="margin-top:4px;"></div>
+        <div id="coachAwardSummary" class="small-text" style="margin-top:4px;"></div>
+      </div>
+
+            <!-- Team Quest Config -->
+      <div style="margin-bottom:12px;">
+        <h3>Team Quest einstellen</h3>
+        <p class="small-text">Gemeinsames Ziel für die gesamte Mannschaft (km oder Stabi). Wird allen Spielern angezeigt.</p>
+        <label>Titel</label>
+        <input type="text" id="teamQuestTitleInput" placeholder="z.B. 300 km Advent-Quest">
+        <label>Beschreibung</label>
+        <textarea id="teamQuestDescInput" placeholder="z.B. Gemeinsam schaffen wir 300 km bis Weihnachten!"></textarea>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Typ</label>
+            <select id="teamQuestTypeInput">
+              <option value="km">Kilometer (Laufen)</option>
+              <option value="stabi">Stabi-Einheiten</option>
+            </select>
+          </div>
+          <div class="flex-grow">
+            <label>Zielwert (gesamt)</label>
+            <input type="number" id="teamQuestTargetInput" step="0.1" placeholder="z.B. 300">
+          </div>
+        </div>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Start-Datum</label>
+            <input type="date" id="teamQuestStartInput">
+          </div>
+          <div class="flex-grow">
+            <label>End-Datum</label>
+            <input type="date" id="teamQuestEndInput">
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px%;">
+          <button id="teamQuestSaveBtn" class="secondary small">Team Quest speichern</button>
+          <button id="teamQuestLoadBtn" class="secondary small">Team Quest laden</button>
+        </div>
+        <div id="coachTeamQuestSummary" class="small-text" style="margin-top:4px;"></div>
+      </div>
+
+      <!-- Duelle Config Coach -->
+      <div style="margin-bottom:12px;">
+        <h3>Duelle anlegen (Coach)</h3>
+        <p class="small-text">
+          1vs1 Duelle auf km oder Stabi. Max. 7 Tage, spätestens bis 02.02.2026. Spieler sehen ihre aktiven Duelle in der App.
+        </p>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Player A (Code)</label>
+            <input type="text" id="duelPlayerAInput" placeholder="z.B. U13-01">
+          </div>
+          <div class="flex-grow">
+            <label>Player B (Code)</label>
+            <input type="text" id="duelPlayerBInput" placeholder="z.B. U13-02">
+          </div>
+        </div>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Typ</label>
+            <select id="duelTypeInput">
+              <option value="km">Kilometer</option>
+              <option value="stabi">Stabi-Einheiten</option>
+            </select>
+          </div>
+          <div class="flex-grow">
+            <label>Start-Datum</label>
+            <input type="date" id="duelStartInput">
+          </div>
+          <div class="flex-grow">
+            <label>End-Datum</label>
+            <input type="date" id="duelEndInput">
+          </div>
+        </div>
+        <button id="duelSaveBtn" class="secondary small">Duell speichern</button>
+        <div id="duelAdminMessage" class="small-text"></div>
+
+        <h4 style="margin-top:10px;">Duelle (Übersicht)</h4>
+        <div id="duelAdminList" class="small-text"></div>
+      </div>
+
+      <table class="coach-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name / Jahrgang / Gruppe</th>
+            <th>Km</th>
+            <th>Stabi</th>
+            <th>XP</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="coachPlayersBody"></tbody>
+      </table>
+      <div id="coachActionMessage" class="small-text"></div>
+
+      <hr>
+
+      <!-- Zeitraum-Auswertung -->
+      <h3>Auswertung Zeitraum</h3>
+      <p class="small-text">Start- und Enddatum wählen – zeigt Summe km/Stabi pro Spieler im Zeitraum. Ideal für „Dezember-König“ usw.</p>
+      <div class="flex-row">
+        <div class="flex-grow">
+          <label>Von</label>
+          <input type="date" id="evalStartInput">
+        </div>
+        <div class="flex-grow">
+          <label>Bis</label>
+          <input type="date" id="evalEndInput">
+        </div>
+      </div>
+      <button id="evalRunBtn" class="secondary small">Auswertung anzeigen</button>
+      <div id="evalRangeLabel" class="small-text"></div>
+      <table class="coach-table">
+        <thead>
+          <tr>
+            <th>Spieler</th>
+            <th>km im Zeitraum</th>
+            <th>Stabi im Zeitraum</th>
+          </tr>
+        </thead>
+        <tbody id="evalTableBody"></tbody>
+      </table>
+      <div id="evalAwardKmText" class="small-text" style="margin-top:4px;"></div>
+      <div id="evalAwardStabiText" class="small-text" style="margin-top:2px;"></div>
+      <div style="margin-top:6px;">
+        <label>Titel Laufen</label>
+        <input type="text" id="awardTitleKmInput" placeholder="z.B. Dezember Kilometer König">
+        <label>Titel Stabi</label>
+        <input type="text" id="awardTitleStabiInput" placeholder="z.B. Dezember Stabi König">
+        <button id="saveAwardBtn" class="secondary small">Auszeichnungen speichern</button>
+        <div id="awardSaveMessage" class="small-text"></div>
+      </div>
+    </div>
+
+    <div id="coachEntriesCard" class="card" style="display:none;">
+      <h3>Einträge bearbeiten</h3>
+      <div id="coachEntriesTitle" class="small-text"></div>
+      <table class="coach-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Typ</th>
+            <th>Wert</th>
+            <th>Kommentar</th>
+            <th>⚠</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="coachEntriesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- container -->
+
+<script>
+/* ===== KONFIG ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAFKhJXx01HEb_kCkdnjkNLo7Y-M7DUSxg",
+  authDomain: "panthers-winter-challenge.firebaseapp.com",
+  projectId: "panthers-winter-challenge",
+  storageBucket: "panthers-winter-challenge.firebasestorage.app",
+  messagingSenderId: "9880532994",
+  appId: "1:9880532994:web:3e53f62fe2043cfca2cf1b"
+};
+
+const TEAM_GOAL_KM = 2200;
+const DEFAULT_GOAL = 80;
+
+/* Challenge-Ende und Duell-Regeln */
+const CHALLENGE_END_DATE = "2026-02-02";
+const MAX_DUEL_DAYS = 7; // max. 7 Tage (0–6 Differenz)
+const MAX_PENDING_DUELS_PER_PLAYER = 3;
+
+/* XP-System */
+const XP_PER_KM = 10;
+const XP_PER_STABI = 40;
+
+/* Coach-PINs */
+const COACH_PINS = ["1234", "5678", "9999"];
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let currentPlayer = null;
+let currentCoachName = null;
+let currentEditPlayerCode = null;
+let currentEditPlayerName = null;
+let lastEvalAwards = null;
+
+const $ = id => document.getElementById(id);
+function show(id){ $(id).style.display=""; }
+function hide(id){ $(id).style.display="none"; }
+
+/* ===== Alt vs Jung: Gruppe aus Jahrgang ===== */
+function groupFromYear(year){
+  if(year === 2012 || year === 2013) return "black"; // alt
+  if(year === 2014 || year === 2015) return "white"; // jung
+  return null;
+}
+
+/* ===== Hilfsfunktionen Datum ===== */
+function todayDateString(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function daysBetween(a,b){
+  const msPerDay = 24*60*60*1000;
+  const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utc2 - utc1) / msPerDay);
+}
+
+function daysBetweenStr(startStr, endStr){
+  const a = new Date(startStr + "T00:00:00");
+  const b = new Date(endStr + "T00:00:00");
+  return daysBetween(a,b);
+}
+
+/* ===== XP-Tier ===== */
+function getXpTier(xp){
+  if(xp >= 800) return {emoji:"🟡", name:"Gold"};
+  if(xp >= 300) return {emoji:"⚪", name:"Silber"};
+  return {emoji:"🟤", name:"Bronze"};
+}
+
+  /* ===== PLAYER LOGIN ===== */
+async function loginWithCode(){
+  const code = $("loginCode").value.trim().toUpperCase();
+  const msg  = $("loginMessage");
+
+  if(!code){
+    msg.textContent = "Bitte Code eingeben.";
+    return;
+  }
+
+  try {
+    let doc = await db.collection("players").doc(code).get();
+    if(!doc.exists){
+      let name = prompt("Neuer Panther-Code. Name eingeben:");
+      if(!name){
+        msg.textContent="Keine Eingabe.";
+        return;
+      }
+      let yearStr = prompt("In welchem Jahr bist du geboren? (2012, 2013, 2014 oder 2015)");
+      if(!yearStr){
+        msg.textContent = "Kein Jahrgang eingegeben.";
+        return;
+      }
+      let birthYear = parseInt(yearStr, 10);
+      const validYears = [2012, 2013, 2014, 2015];
+      if(!validYears.includes(birthYear)){
+        msg.textContent = "Bitte 2012, 2013, 2014 oder 2015 eingeben.";
+        return;
+      }
+      const group = groupFromYear(birthYear);
+
+      await db.collection("players").doc(code).set({
+        code,
+        name,
+        birthYear,
+        group,
+        totalKm:0,
+        stabiCount:0,
+        goalKm: DEFAULT_GOAL,
+        xp: 0,
+        avatarStyle: "basic"
       });
 
-    const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+      currentPlayer = {
+        code,
+        name,
+        birthYear,
+        group,
+        totalKm:0,
+        stabiCount:0,
+        goalKm:DEFAULT_GOAL,
+        xp:0,
+        avatarStyle:"basic"
+      };
+    } else {
+      currentPlayer = doc.data();
+      if(currentPlayer.xp === undefined) currentPlayer.xp = 0;
+      if(currentPlayer.goalKm === undefined) currentPlayer.goalKm = DEFAULT_GOAL;
+      if(!currentPlayer.avatarStyle) currentPlayer.avatarStyle = "basic";
 
-    // ----------------------------------------
-    // Stamm-Daten – Codes & Jahrgänge
-    // (bitte selbst anpassen / ergänzen)
-    // ----------------------------------------
-    const PLAYER_MASTER = {
-      // Beispiel-Codes – hier deine realen Panther-Codes eintragen:
-      "U13-01": { name: "Alexander Reiter", birthYear: 2012 },
-      "U13-02": { name: "Alexander Schlachtitsch", birthYear: 2012 },
-      "U13-03": { name: "Benjamin Divkovic", birthYear: 2012 },
-      "U13-04": { name: "Engjell Wimmer", birthYear: 2012 },
-      "U13-05": { name: "Jonas Paulitsch", birthYear: 2013 },
-      "U13-06": { name: "Julian Pötsch", birthYear: 2013 },
-      "U13-07": { name: "Leo Kastrati", birthYear: 2013 },
-      "U13-08": { name: "Leon Stankovic", birthYear: 2013 },
-      "U13-09": { name: "Luca Toni Finotti", birthYear: 2014 },
-      "U13-10": { name: "Luca-Matteo Riegler", birthYear: 2014 },
-      "U13-11": { name: "Lukas Kalunder", birthYear: 2014 },
-      "U13-12": { name: "Marko Popovic", birthYear: 2014 },
-      "U13-13": { name: "Matic Brodar", birthYear: 2014 },
-      "U13-14": { name: "Matteo Posch", birthYear: 2014 },
-      "U13-15": { name: "Maxi Baumann", birthYear: 2015 },
-      "U13-16": { name: "Maxi Lang", birthYear: 2015 },
-      "U13-17": { name: "Moritz Christof-Käfer", birthYear: 2015 },
-      "U13-18": { name: "Moritz Rechberger", birthYear: 2015 },
-      "U13-19": { name: "Nelio Raffalt", birthYear: 2013 },
-      "U13-20": { name: "Nik Cör", birthYear: 2013 },
-      "U13-21": { name: "Nino Pazolt", birthYear: 2012 },
-      "U13-22": { name: "Paul Gritsch", birthYear: 2012 },
-      "U13-23": { name: "Rafian Walzl", birthYear: 2012 },
-      "U13-24": { name: "Ronald Remmo", birthYear: 2013 },
-      "U13-25": { name: "Tine Ploh", birthYear: 2014 },
-      "U13-26": { name: "Valentino Daum", birthYear: 2013 }
-    };
-
-    const inferGroup = (birthYear) => {
-      if (birthYear === 2012 || birthYear === 2013) return "black";
-      if (birthYear === 2014 || birthYear === 2015) return "white";
-      return "other";
-    };
-
-    // ----------------------------------------
-    // Coach-PINs – NICHT im UI sichtbar
-    // ----------------------------------------
-    const COACH_PINS = {
-      "1234": "Coach 1",
-      "5678": "Coach 2",
-      "9999": "Coach 3"
-    };
-
-    let currentPlayerCode = null;
-    let currentCoachName = null;
-
-    // ----------------------------------------
-    // Spieler-Login
-    // ----------------------------------------
-    async function loginPlayer() {
-      const codeRaw = $("playerCode").value.trim().toUpperCase();
-      const status = $("playerLoginStatus");
-      status.textContent = "";
-
-      if (!codeRaw) {
-        status.innerHTML = "<span class='status-error'>Bitte Panther-Code eingeben.</span>";
-        return;
-      }
-
-      const master = PLAYER_MASTER[codeRaw];
-      if (!master) {
-        status.innerHTML = "<span class='status-error'>Unbekannter Code. Bitte beim Trainer melden.</span>";
-        return;
-      }
-
-      try {
-        status.innerHTML = "<span>Lade Spieler-Daten ...</span>";
-
-        const playerRef = doc(db, "players", codeRaw);
-        const snap = await getDoc(playerRef);
-
-        if (!snap.exists()) {
-          const data = {
-            code: codeRaw,
-            name: master.name,
-            birthYear: master.birthYear,
-            group: inferGroup(master.birthYear),
-            kmTotal: 0,
-            stabiCount: 0,
-            xp: 0
-          };
-          await setDoc(playerRef, data);
+      if(currentPlayer.birthYear && !currentPlayer.group){
+        currentPlayer.group = groupFromYear(currentPlayer.birthYear);
+        try {
+          await db.collection("players").doc(code).update({
+            group: currentPlayer.group
+          });
+        } catch(e){
+          console.warn("Konnte Gruppe nicht aktualisieren:", e);
         }
-
-        currentPlayerCode = codeRaw;
-        localStorage.setItem("panther_code", codeRaw);
-
-        $("playerTitle").textContent = master.name;
-        $("playerInfoLine").textContent = `Jahrgang ${master.birthYear} · Gruppe ${inferGroup(master.birthYear).toUpperCase()}`;
-
-        $("sessionDate").value = todayIso();
-        $("runKm").value = "";
-        $("stabiUnits").value = "";
-        $("playerSaveStatus").textContent = "";
-
-        showElement("loginView", false);
-        showElement("playerDashboard", true);
-
-        await refreshPlayerStats();
-        status.innerHTML = "<span class='status-ok'>Login erfolgreich.</span>";
-      } catch (err) {
-        console.error(err);
-        status.innerHTML = "<span class='status-error'>Fehler beim Login. Bitte später erneut versuchen.</span>";
       }
     }
 
-    function logoutPlayer() {
-      currentPlayerCode = null;
-      localStorage.removeItem("panther_code");
-      showElement("playerDashboard", false);
-      showElement("loginView", true);
-      $("playerLoginStatus").textContent = "";
-      $("playerCode").value = "";
+    localStorage.setItem("panther_code", code);
+
+    hide("loginView");
+    hide("coachView");
+    show("appView");
+
+    await refreshDashboard();
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler bei Anmeldung.";
+  }
+}
+
+$("loginBtn").onclick = loginWithCode;
+
+$("clearSavedBtn").onclick = () => {
+  localStorage.removeItem("panther_code");
+  $("loginMessage").textContent = "Gespeicherter Code gelöscht.";
+};
+
+$("logoutBtn").onclick = () => {
+  localStorage.removeItem("panther_code");
+  location.reload();
+};
+
+/* ===== BADGES ===== */
+function computeBadges(player){
+  const km = player.totalKm || 0;
+  const stabi = player.stabiCount || 0;
+  const xp = player.xp || 0;
+  const badges = [];
+
+  if(km >= 10)  badges.push({icon:"🏅", text:"10 km Läufer"});
+  if(km >= 25)  badges.push({icon:"🥈", text:"25 km Stark"});
+  if(km >= 50)  badges.push({icon:"🥇", text:"50 km Maschine"});
+  if(km >= 100) badges.push({icon:"🏆", text:"100 km Legende"});
+
+  if(stabi >= 5)  badges.push({icon:"💪", text:"5× Stabi"});
+  if(stabi >= 10) badges.push({icon:"🔥", text:"10× Stabi Warrior"});
+
+  if(xp >= 500)  badges.push({icon:"📈", text:"500 XP"});
+  if(xp >= 1000) badges.push({icon:"⭐", text:"1000 XP Level Beast"});
+
+  return badges;
+}
+
+function renderBadges(player){
+  const container = $("badgeContainer");
+  container.innerHTML = "";
+  const badges = computeBadges(player);
+  if(badges.length === 0){
+    container.innerHTML = '<div class="small-text">Noch keine Badges – weiter trainieren!</div>';
+    return;
+  }
+  badges.forEach(b=>{
+    const div = document.createElement("div");
+    div.className = "badge";
+    div.innerHTML = `<span class="icon">${b.icon}</span><span>${b.text}</span>`;
+    container.appendChild(div);
+  });
+}
+
+/* ===== AVATAR / STYLES ===== */
+function renderAvatarOptions(player){
+  const container = $("avatarOptions");
+  const info = $("avatarInfo");
+  const xp = player.xp || 0;
+  const style = player.avatarStyle || "basic";
+
+  const options = [
+    {id:"basic", label:"Basic", requirement:0, desc:"Standard"},
+    {id:"silver", label:"Silber-Frame", requirement:300, desc:"ab 300 XP"},
+    {id:"gold", label:"Gold-Frame", requirement:800, desc:"ab 800 XP"},
+    {id:"night", label:"Night Panther", requirement:1200, desc:"ab 1200 XP"}
+  ];
+
+  info.textContent = `Deine XP: ${xp}. Styles werden mit mehr XP freigeschaltet.`;
+
+  container.innerHTML = "";
+  options.forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.className = "avatar-option" + (style === opt.id ? " selected" : "");
+    const locked = xp < opt.requirement;
+    if(locked && opt.id !== "basic"){
+      btn.classList.add("locked");
     }
+    btn.textContent = `${opt.label} ${opt.requirement>0 ? "("+opt.desc+")" : ""}`;
 
-    async function refreshPlayerStats() {
-      if (!currentPlayerCode) return;
-      const ref = doc(db, "players", currentPlayerCode);
-      const snap = await getDoc(ref);
-      if (!snap.exists()) return;
-
-      const data = snap.data();
-      const text = `Gesamt: ${formatNumber(data.kmTotal)} km · ${data.stabiCount ?? 0} Stabi-Einheiten · XP: ${data.xp ?? 0}`;
-      $("playerStatsLine").textContent = text;
-    }
-
-    async function savePlayerSession() {
-      if (!currentPlayerCode) return;
-
-      const date = $("sessionDate").value || todayIso();
-      const km = parseFloat($("runKm").value.replace(",", ".")) || 0;
-      const stabi = parseInt($("stabiUnits").value, 10) || 0;
-
-      const status = $("playerSaveStatus");
-      status.textContent = "";
-
-      if (km <= 0 && stabi <= 0) {
-        status.innerHTML = "<span class='status-error'>Bitte mindestens KM oder Stabi-Einheiten eintragen.</span>";
-        return;
-      }
-
-      try {
-        status.innerHTML = "<span>Speichere Training ...</span>";
-
-        const master = PLAYER_MASTER[currentPlayerCode];
-        const session = {
-          code: currentPlayerCode,
-          name: master.name,
-          date,
-          km,
-          stabi,
-          ts: Date.now()
-        };
-
-        await addDoc(collection(db, "sessions"), session);
-
-        const xpGain = Math.round(km * 10 + stabi * 20);
-
-        const playerRef = doc(db, "players", currentPlayerCode);
-        await updateDoc(playerRef, {
-          kmTotal: increment(km),
-          stabiCount: increment(stabi),
-          xp: increment(xpGain)
-        });
-
-        $("runKm").value = "";
-        $("stabiUnits").value = "";
-        await refreshPlayerStats();
-
-        status.innerHTML = "<span class='status-ok'>Training gespeichert – stark!</span>";
-        await sleep(1600);
-        status.textContent = "";
-      } catch (err) {
-        console.error(err);
-        status.innerHTML = "<span class='status-error'>Fehler beim Speichern. Bitte Trainer informieren.</span>";
-      }
-    }
-
-    // ----------------------------------------
-    // Coach-Login
-    // ----------------------------------------
-    async function loginCoach() {
-      const pin = $("coachPin").value.trim();
-      const status = $("coachLoginStatus");
-      status.textContent = "";
-
-      if (!pin) {
-        status.innerHTML = "<span class='status-error'>Bitte Coach-PIN eingeben.</span>";
-        return;
-      }
-
-      const coachName = COACH_PINS[pin];
-      if (!coachName) {
-        status.innerHTML = "<span class='status-error'>PIN falsch. Bitte intern im Trainerteam klären.</span>";
-        return;
-      }
-
-      currentCoachName = coachName;
-      $("coachNamePill").textContent = coachName;
-
-      showElement("coachLoginView", false);
-      showElement("coachDashboard", true);
-      $("coachPin").value = "";
-      status.textContent = "";
-
-      await refreshCoachOverview();
-      await renderGroupCompare();
-    }
-
-    function logoutCoach() {
-      currentCoachName = null;
-      showElement("coachDashboard", false);
-      showElement("coachLoginView", true);
-      $("coachLoginStatus").textContent = "";
-    }
-
-    // ----------------------------------------
-    // Coach: Spieler-Tabelle & Zeitraum-Auswertung
-    // ----------------------------------------
-    async function refreshCoachOverview() {
-      const tbody = $("coachPlayerTableBody");
-      tbody.innerHTML = "<tr><td colspan='6' class='muted'>Lade Spieler ...</td></tr>";
-
-      try {
-        const snap = await getDocs(collection(db, "players"));
-        const rows = [];
-        snap.forEach((docSnap) => {
-          rows.push(docSnap.data());
-        });
-
-        rows.sort((a, b) => (b.kmTotal ?? 0) - (a.kmTotal ?? 0));
-
-        if (!rows.length) {
-          tbody.innerHTML = "<tr><td colspan='6' class='muted'>Noch keine Spieler vorhanden.</td></tr>";
-          return;
+    if(!locked || opt.id === "basic"){
+      btn.onclick = async ()=>{
+        try {
+          await db.collection("players").doc(player.code).update({
+            avatarStyle: opt.id
+          });
+          currentPlayer.avatarStyle = opt.id;
+          await refreshDashboard();
+        } catch(e){
+          console.error(e);
+          alert("Fehler beim Speichern des Styles.");
         }
-
-        tbody.innerHTML = "";
-        for (const p of rows) {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${p.code}</td>
-            <td>${p.name}</td>
-            <td>${p.birthYear ?? ""}</td>
-            <td class="right">${formatNumber(p.kmTotal ?? 0)}</td>
-            <td class="right">${p.stabiCount ?? 0}</td>
-            <td class="right">${p.xp ?? 0}</td>
-          `;
-          tbody.appendChild(tr);
-        }
-      } catch (err) {
-        console.error(err);
-        tbody.innerHTML = "<tr><td colspan='6' class='danger'>Fehler beim Laden der Spieler.</td></tr>";
-      }
+      };
     }
 
-    async function evaluateRange() {
-      const from = $("rangeFrom").value;
-      const to = $("rangeTo").value;
-      const status = $("rangeStatus");
-      const body = $("rangeResultBody");
+    container.appendChild(btn);
+  });
+}
 
-      status.textContent = "";
-      body.innerHTML = "";
+/* ===== STREAK & KALENDER ===== */
+async function loadStreakAndCalendar(){
+  const streakText = $("streakText");
+  const bestStreakText = $("bestStreakText");
+  const monthLabel = $("calendarMonthLabel");
+  const grid = $("calendarGrid");
 
-      if (!from || !to) {
-        status.innerHTML = "<span class='status-error'>Bitte Von- und Bis-Datum wählen.</span>";
-        body.innerHTML = "<tr><td colspan='3' class='muted'>Keine Daten.</td></tr>";
-        return;
-      }
+  if(!currentPlayer){
+    streakText.textContent = "Noch keine Einträge.";
+    bestStreakText.textContent = "";
+    grid.innerHTML = "";
+    monthLabel.textContent = "";
+    return;
+  }
 
-      try {
-        status.innerHTML = "<span>Berechne Zeitraum-Auswertung ...</span>";
+  try {
+    const runsSnap = await db.collection("runs").where("playerCode","==",currentPlayer.code).get();
+    const stabiSnap = await db.collection("stabiSessions").where("playerCode","==",currentPlayer.code).get();
 
-        const snap = await getDocs(collection(db, "sessions"));
-        const perPlayer = new Map();
+    const dateSet = new Set();
 
-        snap.forEach((docSnap) => {
-          const s = docSnap.data();
-          if (!s.date || s.date < from || s.date > to) return;
-
-          const key = s.code;
-          if (!perPlayer.has(key)) {
-            perPlayer.set(key, { name: s.name, km: 0, stabi: 0 });
-          }
-          const entry = perPlayer.get(key);
-          entry.km += s.km ?? 0;
-          entry.stabi += s.stabi ?? 0;
-        });
-
-        const rows = Array.from(perPlayer.entries()).map(([code, v]) => ({
-          code,
-          ...v
-        }));
-        rows.sort((a, b) => (b.km ?? 0) - (a.km ?? 0));
-
-        if (!rows.length) {
-          body.innerHTML = "<tr><td colspan='3' class='muted'>Keine Einträge im gewählten Zeitraum.</td></tr>";
-        } else {
-          for (const r of rows) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${r.name} (${r.code})</td>
-              <td class="right">${formatNumber(r.km)}</td>
-              <td class="right">${r.stabi}</td>
-            `;
-            body.appendChild(tr);
-          }
-        }
-
-        status.innerHTML = `<span class='status-ok'>Zeitraum ausgewertet (${from} – ${to}).</span>`;
-      } catch (err) {
-        console.error(err);
-        status.innerHTML = "<span class='status-error'>Fehler bei Zeitraum-Auswertung.</span>";
-        body.innerHTML = "<tr><td colspan='3' class='danger'>Fehler.</td></tr>";
-      }
-    }
-
-    // CSV-Export der Spieler-Gesamtwerte
-    async function exportCsv() {
-      const status = $("coachStatus");
-      status.textContent = "";
-
-      try {
-        const snap = await getDocs(collection(db, "players"));
-        const rows = [];
-        snap.forEach((docSnap) => rows.push(docSnap.data()));
-
-        if (!rows.length) {
-          status.innerHTML = "<span class='status-error'>Keine Spieler zum Export vorhanden.</span>";
-          return;
-        }
-
-        const header = ["Code", "Name", "Jahrgang", "Gruppe", "KM", "Stabi", "XP"];
-        const lines = [header.join(";")];
-
-        for (const p of rows) {
-          lines.push([
-            p.code,
-            p.name,
-            p.birthYear ?? "",
-            p.group ?? "",
-            String(p.kmTotal ?? 0).replace(".", ","),
-            p.stabiCount ?? 0,
-            p.xp ?? 0
-          ].join(";"));
-        }
-
-        const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "panthers_u13_winter_challenge_players.csv";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        status.innerHTML = "<span class='status-ok'>CSV exportiert.</span>";
-      } catch (err) {
-        console.error(err);
-        status.innerHTML = "<span class='status-error'>Fehler beim CSV-Export.</span>";
-      }
-    }
-
-    // ----------------------------------------
-    // GRUPPEN-VERGLEICH (BLACK VS WHITE)
-    // ----------------------------------------
-    async function renderGroupCompare() {
-      const box = document.getElementById("groupcompare");
-      if (!box) return;
-
-      try {
-        const snap = await getDocs(collection(db, "players"));
-        const black = [];
-        const white = [];
-
-        snap.forEach((docSnap) => {
-          const p = docSnap.data();
-          const grp = p.group || inferGroup(p.birthYear);
-          if (grp === "black") black.push(p);
-          else if (grp === "white") white.push(p);
-        });
-
-        const sum = (arr, field) => arr.reduce((s, x) => s + (x[field] ?? 0), 0);
-
-        const totalKmBlack = sum(black, "kmTotal");
-        const totalKmWhite = sum(white, "kmTotal");
-        const totalStabiBlack = sum(black, "stabiCount");
-        const totalStabiWhite = sum(white, "stabiCount");
-
-        const avgKmBlack = black.length ? totalKmBlack / black.length : 0;
-        const avgKmWhite = white.length ? totalKmWhite / white.length : 0;
-        const avgStabiBlack = black.length ? totalStabiBlack / black.length : 0;
-        const avgStabiWhite = white.length ? totalStabiWhite / white.length : 0;
-
-        box.innerHTML = `
-          <p>Black (Jg. 2012/2013): <b>${black.length}</b> Spieler</p>
-          <ul>
-            <li>Gesamt KM: <b>${formatNumber(totalKmBlack)}</b> km</li>
-            <li>KM / Spieler: <b>${formatNumber(avgKmBlack)}</b> km</li>
-            <li>Stabi / Spieler: <b>${avgStabiBlack.toFixed(1)}</b></li>
-          </ul>
-          <p>White (Jg. 2014/2015): <b>${white.length}</b> Spieler</p>
-          <ul>
-            <li>Gesamt KM: <b>${formatNumber(totalKmWhite)}</b> km</li>
-            <li>KM / Spieler: <b>${formatNumber(avgKmWhite)}</b> km</li>
-            <li>Stabi / Spieler: <b>${avgStabiWhite.toFixed(1)}</b></li>
-          </ul>
-        `;
-      } catch (err) {
-        console.error(err);
-        box.innerHTML = "<p class='danger'>Fehler beim Laden des Gruppen-Vergleichs.</p>";
-      }
-    }
-
-    // ----------------------------------------
-    // Event-Bindings & Auto-Login
-    // ----------------------------------------
-    function bindEvents() {
-      $("playerLoginBtn").addEventListener("click", loginPlayer);
-      $("playerLogoutBtn").addEventListener("click", logoutPlayer);
-      $("saveSessionBtn").addEventListener("click", savePlayerSession);
-
-      $("coachLoginBtn").addEventListener("click", loginCoach);
-      $("coachLogoutBtn").addEventListener("click", logoutCoach);
-
-      $("runRangeEvalBtn").addEventListener("click", evaluateRange);
-      $("exportCsvBtn").addEventListener("click", exportCsv);
-    }
-
-    async function autoLoginFromStorage() {
-      const saved = localStorage.getItem("panther_code");
-      if (!saved) return;
-      $("playerCode").value = saved;
-      await loginPlayer();
-    }
-
-    // Initialisieren
-    window.addEventListener("load", async () => {
-      bindEvents();
-      $("sessionDate").value = todayIso();
-      await autoLoginFromStorage();
+    runsSnap.forEach(doc=>{
+      const d = doc.data();
+      if(d.date) dateSet.add(d.date);
     });
-  </script>
+    stabiSnap.forEach(doc=>{
+      const d = doc.data();
+      if(d.date) dateSet.add(d.date);
+    });
+
+    const dateStrings = Array.from(dateSet);
+    if(dateStrings.length === 0){
+      streakText.textContent = "Noch keine Trainings-Einträge.";
+      bestStreakText.textContent = "";
+      grid.innerHTML = "";
+      const now = new Date();
+      monthLabel.textContent = now.toLocaleDateString("de-AT", { month:"long", year:"numeric" });
+      return;
+    }
+
+    dateStrings.sort();
+    const dates = dateStrings.map(ds => new Date(ds + "T00:00:00"));
+
+    let best = 1;
+    let current = 1;
+    for(let i=1;i<dates.length;i++){
+      const diff = daysBetween(dates[i-1], dates[i]);
+      if(diff === 1){
+        current++;
+      } else {
+        if(current > best) best = current;
+        current = 1;
+      }
+    }
+    if(current > best) best = current;
+
+    let currentStreak = 0;
+    const today = new Date();
+    const lastDate = dates[dates.length-1];
+    const diffLast = daysBetween(lastDate, today);
+
+    if(diffLast === 0){
+      currentStreak = 1;
+      let last = lastDate;
+      for(let i = dates.length-2; i>=0; i--){
+        const diff = daysBetween(dates[i], last);
+        if(diff === 1){
+          currentStreak++;
+          last = dates[i];
+        } else {
+          break;
+        }
+      }
+    } else {
+      currentStreak = 0;
+    }
+
+    streakText.textContent = `Aktuelle Streak: ${currentStreak} Tag(e) in Folge Training.`;
+    bestStreakText.textContent = `Bester Streak bisher: ${best} Tag(e).`;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+
+    monthLabel.textContent = firstDay.toLocaleDateString("de-AT", { month:"long", year:"numeric" });
+
+    const activityInMonth = new Set();
+    dateStrings.forEach(ds=>{
+      const d = new Date(ds + "T00:00:00");
+      if(d.getFullYear() === year && d.getMonth() === month){
+        activityInMonth.add(d.getDate());
+      }
+    });
+
+    grid.innerHTML = "";
+    const weekdays = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+    weekdays.forEach(w=>{
+      const div = document.createElement("div");
+      div.className = "calendar-day";
+      div.style.fontWeight = "700";
+      div.textContent = w;
+      grid.appendChild(div);
+    });
+
+    let startIndex = firstDay.getDay();
+    if(startIndex === 0) startIndex = 7;
+    for(let i=1;i<startIndex;i++){
+      const empty = document.createElement("div");
+      empty.className = "calendar-day empty";
+      empty.textContent = "";
+      grid.appendChild(empty);
+    }
+
+    for(let day=1; day<=daysInMonth; day++){
+      const div = document.createElement("div");
+      div.className = "calendar-day";
+      div.textContent = day;
+      if(activityInMonth.has(day)){
+        div.classList.add("has-activity");
+      }
+      if(day === now.getDate()){
+        div.classList.add("today");
+      }
+      grid.appendChild(div);
+    }
+  } catch(e){
+    console.error(e);
+    streakText.textContent = "Fehler beim Laden des Streaks.";
+    bestStreakText.textContent = "";
+    $("calendarGrid").innerHTML = "";
+  }
+}
+
+/* ===== AUSZEICHNUNG SPIELER-SEITE ===== */
+async function loadAwardForPlayer(){
+  const kmTitleEl = $("awardKmTitlePlayer");
+  const kmSubEl = $("awardKmSubtitlePlayer");
+  const stTitleEl = $("awardStabiTitlePlayer");
+  const stSubEl = $("awardStabiSubtitlePlayer");
+
+  try {
+    const doc = await db.collection("awards").doc("current").get();
+    if(!doc.exists){
+      kmTitleEl.textContent = "Noch keine Lauf-Auszeichnung";
+      kmSubEl.textContent = "";
+      stTitleEl.textContent = "Noch keine Stabi-Auszeichnung";
+      stSubEl.textContent = "";
+      return;
+    }
+    const a = doc.data();
+
+    if(a.kmWinnerName){
+      kmTitleEl.textContent = a.kmTitle || "Kilometer König";
+      let line = "🏆 " + a.kmWinnerName;
+      if(typeof a.kmValue === "number"){
+        line += " – " + a.kmValue.toFixed(1) + " km";
+      }
+      if(a.kmStartDate && a.kmEndDate){
+        line += " (" + a.kmStartDate + " bis " + a.kmEndDate + ")";
+      }
+      kmSubEl.textContent = line;
+    } else {
+      kmTitleEl.textContent = "Noch keine Lauf-Auszeichnung";
+      kmSubEl.textContent = "";
+    }
+
+    if(a.stabiWinnerName){
+      stTitleEl.textContent = a.stabiTitle || "Stabi König";
+      let line2 = "💪 " + a.stabiWinnerName;
+      if(typeof a.stabiValue === "number"){
+        line2 += " – " + a.stabiValue + " Stabi";
+      }
+      if(a.stabiStartDate && a.stabiEndDate){
+        line2 += " (" + a.stabiStartDate + " bis " + a.stabiEndDate + ")";
+      }
+      stSubEl.textContent = line2;
+    } else {
+      stTitleEl.textContent = "Noch keine Stabi-Auszeichnung";
+      stSubEl.textContent = "";
+    }
+
+  } catch(e){
+    console.error(e);
+    kmTitleEl.textContent = "Fehler beim Laden der Auszeichnung.";
+    kmSubEl.textContent = "";
+    stTitleEl.textContent = "";
+    stSubEl.textContent = "";
+  }
+}
+
+/* ===== TEAM QUEST – SPIELER ===== */
+async function loadTeamQuestForPlayer(){
+  const titleEl = $("teamQuestTitle");
+  const descEl = $("teamQuestDesc");
+  const periodEl = $("teamQuestPeriod");
+  const progressTextEl = $("teamQuestProgressText");
+  const fillEl = $("teamQuestProgressFill");
+  const msgEl = $("teamQuestMessage");
+
+  titleEl.textContent = "Keine Team Quest aktiv";
+  descEl.textContent = "";
+  periodEl.textContent = "";
+  progressTextEl.textContent = "";
+  fillEl.style.width = "0%";
+  msgEl.textContent = "";
+
+  try {
+    const doc = await db.collection("teamQuests").doc("current").get();
+    if(!doc.exists){
+      msgEl.textContent = "Derzeit keine Team Quest eingestellt.";
+      return;
+    }
+    const q = doc.data();
+    titleEl.textContent = q.title || "Team Quest";
+    descEl.textContent = q.description || "";
+    periodEl.textContent = `Zeitraum: ${q.startDate} bis ${q.endDate}`;
+
+    const type = q.type || "km";
+    const target = q.targetValue || 0;
+    if(target <= 0){
+      progressTextEl.textContent = "";
+      return;
+    }
+
+    let sum = 0;
+    if(type === "km"){
+      const runsSnap = await db.collection("runs")
+        .where("date",">=",q.startDate)
+        .where("date","<=",q.endDate)
+        .get();
+      runsSnap.forEach(doc=>{
+        const d = doc.data();
+        sum += d.km || 0;
+      });
+    } else {
+      const stabiSnap = await db.collection("stabiSessions")
+        .where("date",">=",q.startDate)
+        .where("date","<=",q.endDate)
+        .get();
+      stabiSnap.forEach(doc=>{
+        const d = doc.data();
+        sum += 1;
+      });
+    }
+
+    const pct = Math.min(100, (sum / target) * 100);
+    fillEl.style.width = pct + "%";
+
+    if(type === "km"){
+      progressTextEl.textContent = `Fortschritt Team: ${sum.toFixed(1)} / ${target.toFixed(1)} km (${pct.toFixed(0)}%)`;
+    } else {
+      progressTextEl.textContent = `Fortschritt Team: ${sum} / ${target} Stabi-Einheiten (${pct.toFixed(0)}%)`;
+    }
+
+    const today = todayDateString();
+    if(today < q.startDate || today > q.endDate){
+      msgEl.textContent = "Hinweis: du bist außerhalb des Team-Quest-Zeitraums.";
+    }
+
+  } catch(e){
+    console.error(e);
+    msgEl.textContent = "Fehler beim Laden der Team Quest.";
+  }
+}
+
+/* ===== DUELL-ENDDATUM LIMITS (SPIELER) ===== */
+function setupDuelEndInputLimits(){
+  const input = $("duelEndPlayerInput");
+  if(!input) return;
+  const today = todayDateString();
+  if(today > CHALLENGE_END_DATE){
+    input.disabled = true;
+    input.value = "";
+    return;
+  }
+  const todayDate = new Date(today + "T00:00:00");
+  const plus6 = new Date(todayDate);
+  plus6.setDate(plus6.getDate() + (MAX_DUEL_DAYS - 1));
+  const plus6Str = plus6.toISOString().slice(0,10);
+  const maxDate = plus6Str < CHALLENGE_END_DATE ? plus6Str : CHALLENGE_END_DATE;
+  input.disabled = false;
+  input.min = today;
+  input.max = maxDate;
+  if(!input.value || input.value < today || input.value > maxDate){
+    input.value = maxDate;
+  }
+}
+
+/* ===== DASHBOARD ===== */
+async function refreshDashboard(){
+  const playersSnap = await db.collection("players").get();
+  let players = [];
+  let teamKm = 0;
+
+  playersSnap.forEach(d=>{
+    let p = d.data();
+    if(p.xp === undefined) p.xp = 0;
+    if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
+    if(!p.avatarStyle) p.avatarStyle = "basic";
+    teamKm += p.totalKm || 0;
+    players.push(p);
+  });
+
+  let me = players.find(p=>p.code===currentPlayer.code);
+  if(me){ currentPlayer = me; }
+
+  const yearText = currentPlayer.birthYear ? ` · Jahrgang ${currentPlayer.birthYear}` : "";
+  const groupText = currentPlayer.group ? ` · Gruppe ${currentPlayer.group}` : "";
+  $("welcomeText").textContent = "Servus, " + currentPlayer.name + " 🐾" + yearText + groupText;
+  $("playerCodeLabel").textContent = "Code: " + currentPlayer.code;
+
+  const km = currentPlayer.totalKm || 0;
+  const goal = currentPlayer.goalKm || DEFAULT_GOAL;
+  const stabi = currentPlayer.stabiCount || 0;
+  const xp = currentPlayer.xp || 0;
+  const level = Math.floor(xp / 100) + 1;
+  const tier = getXpTier(xp);
+
+  $("playerKm").textContent = km.toFixed(1);
+  $("playerGoalKm").textContent = goal;
+  $("playerKmFill").style.width = Math.min(100, (km/goal)*100) + "%";
+
+  $("playerStabiCount").textContent = stabi;
+  $("playerXp").textContent = xp;
+  $("playerLevel").textContent = level;
+  $("playerTierLabel").textContent = `${tier.emoji} ${tier.name}`;
+
+  $("teamKm").textContent = teamKm.toFixed(1);
+  $("teamGoalKm").textContent = TEAM_GOAL_KM;
+  $("teamKmFill").style.width = Math.min(100, (teamKm/TEAM_GOAL_KM)*100) + "%";
+
+  $("personalGoalLabel").textContent = goal;
+  $("personalGoalInput").value = goal;
+
+  players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
+
+  let tbody = $("leaderboardBody");
+  tbody.innerHTML = "";
+
+  const suspiciousPlayers = new Set();
+  try {
+    const runsSusp = await db.collection("runs").where("suspicious","==",true).get();
+    runsSusp.forEach(doc=>{
+      const d = doc.data();
+      if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+    });
+    const stabiSusp = await db.collection("stabiSessions").where("suspicious","==",true).get();
+    stabiSusp.forEach(doc=>{
+      const d = doc.data();
+      if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+    });
+  } catch(e){
+    console.warn("Fehler beim Laden suspicious:", e);
+  }
+
+  players.forEach((p,i)=>{
+    const xpP = p.xp || 0;
+    const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
+
+    let styleEmoji = "";
+    if(p.avatarStyle === "silver") styleEmoji = "⚪ ";
+    if(p.avatarStyle === "gold") styleEmoji = "👑 ";
+    if(p.avatarStyle === "night") styleEmoji = "🌙 ";
+
+    const yText = p.birthYear ? ` (JG ${p.birthYear}${p.group ? " · " + p.group : ""})` : "";
+
+    let tr = document.createElement("tr");
+    if(p.code===currentPlayer.code) tr.classList.add("highlight-row");
+    tr.innerHTML = `
+      <td>${i+1}.</td>
+      <td>${styleEmoji}${p.name}${yText}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
+      <td>${(p.totalKm||0).toFixed(1)}</td>
+      <td>${p.stabiCount||0}</td>
+      <td>${xpP}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  renderBadges(currentPlayer);
+  renderAvatarOptions(currentPlayer);
+  setupDuelEndInputLimits();
+  await loadPlayersForDuelSelect();
+  await loadCurrentChallengeForPlayer();
+  await loadTeamQuestForPlayer();
+  await loadAwardForPlayer();
+  await loadStreakAndCalendar();
+  await loadActivityFeed();
+  await loadDuelsForPlayer();
+  await loadIncomingDuelsForPlayer();
+}
+
+$("refreshBtn").onclick = refreshDashboard;
+
+/* ===== PERSÖNLICHES ZIEL SPEICHERN ===== */
+$("savePersonalGoalBtn").onclick = async ()=>{
+  if(!currentPlayer) return;
+  const val = parseFloat($("personalGoalInput").value || 0);
+  if(!(val > 0)){
+    alert("Bitte ein sinnvolles km-Ziel eingeben.");
+    return;
+  }
+  try {
+    await db.collection("players").doc(currentPlayer.code).update({
+      goalKm: val
+    });
+    currentPlayer.goalKm = val;
+    await refreshDashboard();
+  } catch(e){
+    console.error(e);
+    alert("Fehler beim Speichern des Ziels.");
+  }
+};
+
+/* ===== LAUF SPEICHERN ===== */
+$("saveRunBtn").onclick = async () => {
+  if (!currentPlayer) return;
+  const date = $("runDate").value || todayDateString();
+  const km = parseFloat($("runKm").value || "0");
+  const time = $("runTime").value ? parseInt($("runTime").value, 10) : null;
+  const comment = $("runComment").value.trim();
+  const msg = $("runMessage");
+  msg.textContent = "";
+
+  if (!(km > 0)) {
+    msg.textContent = "Bitte Kilometer eingeben.";
+    return;
+  }
+
+  const suspicious = km > 25;
+
+  try {
+    const batch = db.batch();
+    const runRef = db.collection("runs").doc();
+    batch.set(runRef, {
+      playerCode: currentPlayer.code,
+      date,
+      km,
+      time: time || null,
+      comment,
+      suspicious,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const playerRef = db.collection("players").doc(currentPlayer.code);
+    const xpGain = Math.round(km * XP_PER_KM);
+    batch.update(playerRef, {
+      totalKm: firebase.firestore.FieldValue.increment(km),
+      xp: firebase.firestore.FieldValue.increment(xpGain)
+    });
+
+    await batch.commit();
+    $("runKm").value = "";
+    $("runTime").value = "";
+    $("runComment").value = "";
+    msg.textContent = `Lauf gespeichert (+${km.toFixed(1)} km, +${xpGain} XP).` + (suspicious ? " (⚠ wird vom Trainer geprüft)" : "");
+
+    await refreshDashboard();
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Fehler beim Speichern.";
+  }
+};
+
+$("saveStabiBtn").onclick = async () => {
+  if (!currentPlayer) return;
+  const date = $("stabiDate").value || todayDateString();
+  const rounds = parseInt($("stabiRounds").value || "1", 10);
+  const comment = $("stabiComment").value.trim();
+  const msg = $("stabiMessage");
+  msg.textContent = "";
+
+  if (!(rounds > 0)) {
+    msg.textContent = "Bitte Runden auswählen.";
+    return;
+  }
+
+  const suspicious = rounds > 3;
+
+  try {
+    const batch = db.batch();
+    const stRef = db.collection("stabiSessions").doc();
+    batch.set(stRef, {
+      playerCode: currentPlayer.code,
+      date,
+      rounds,
+      comment,
+      suspicious,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const playerRef = db.collection("players").doc(currentPlayer.code);
+    const xpGain = rounds * XP_PER_STABI;
+    batch.update(playerRef, {
+      stabiCount: firebase.firestore.FieldValue.increment(1),
+      xp: firebase.firestore.FieldValue.increment(xpGain)
+    });
+
+    await batch.commit();
+    $("stabiComment").value = "";
+    msg.textContent = `Stabi gespeichert (+${rounds} Runde(n), +${xpGain} XP).` + (suspicious ? " (⚠ wird vom Trainer geprüft)" : "");
+
+    await refreshDashboard();
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Fehler beim Speichern.";
+  }
+};
+
+/* ===== TABS (Lauf / Stabi / Info) ===== */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+    $(tab).classList.add("active");
+  });
+});
+
+/* ===== ACTIVITY FEED ===== */
+async function loadActivityFeed() {
+  const container = $("activityFeed");
+  container.innerHTML = "Lade Aktivitäten ...";
+
+  try {
+    const [runsSnap, stabiSnap, playersSnap] = await Promise.all([
+      db.collection("runs").orderBy("createdAt", "desc").limit(30).get(),
+      db.collection("stabiSessions").orderBy("createdAt", "desc").limit(30).get(),
+      db.collection("players").get()
+    ]);
+
+    const playerMap = {};
+    playersSnap.forEach(d => {
+      const p = d.data();
+      playerMap[p.code] = p.name || p.code;
+    });
+
+    const items = [];
+    runsSnap.forEach(doc => {
+      const d = doc.data();
+      items.push({
+        type: "run",
+        date: d.date,
+        createdAt: d.createdAt ? d.createdAt.toMillis() : new Date(d.date + "T00:00:00").getTime(),
+        playerCode: d.playerCode,
+        km: d.km || 0,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
+      });
+    });
+
+    stabiSnap.forEach(doc => {
+      const d = doc.data();
+      items.push({
+        type: "stabi",
+        date: d.date,
+        createdAt: d.createdAt ? d.createdAt.toMillis() : new Date(d.date + "T00:00:00").getTime(),
+        playerCode: d.playerCode,
+        rounds: d.rounds || 1,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
+      });
+    });
+
+    items.sort((a, b) => b.createdAt - a.createdAt);
+    container.innerHTML = "";
+    if (items.length === 0) {
+      container.textContent = "Noch keine Einträge.";
+      return;
+    }
+
+    items.slice(0, 30).forEach(it => {
+      const div = document.createElement("div");
+      div.className = "activity-item";
+      const name = playerMap[it.playerCode] || it.playerCode;
+      const susp = it.suspicious ? " ⚠" : "";
+      let main = "";
+      if (it.type === "run") {
+        main = `<strong>${name}</strong> – ${it.km.toFixed(1)} km`;
+      } else {
+        main = `<strong>${name}</strong> – Stabi (${it.rounds} Runde(n))`;
+      }
+      const dateText = it.date || "";
+      div.innerHTML = `
+        <div class="activity-main">
+          <div>${main}${susp}</div>
+          <div>${dateText}</div>
+        </div>
+        <div class="activity-type">${it.type === "run" ? "Lauf" : "Stabi"}${it.comment ? " – " + it.comment : ""}</div>
+      `;
+      container.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    container.textContent = "Fehler beim Laden.";
+  }
+}
+
+$("refreshFeedBtn").onclick = loadActivityFeed;
+
+/* ===== CHALLENGE (Coach & Spieler) ===== */
+async function saveChallenge() {
+  const title = $("challengeTitleInput").value.trim();
+  const targetKm = parseFloat($("challengeTargetKmInput").value || "0");
+  const startDate = $("challengeStartInput").value;
+  const endDate = $("challengeEndInput").value;
+  const out = $("coachChallengeSummary");
+
+  if (!title || !(targetKm > 0) || !startDate || !endDate) {
+    out.textContent = "Bitte Titel, Ziel und Zeitraum ausfüllen.";
+    return;
+  }
+
+  try {
+    await db.collection("challenges").doc("current").set({
+      title,
+      targetKm,
+      startDate,
+      endDate
+    });
+    out.textContent = `Challenge gespeichert: "${title}" (${startDate} bis ${endDate}, Ziel: ${targetKm} km pro Spieler).`;
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Speichern.";
+  }
+}
+
+$("challengeSaveBtn").onclick = saveChallenge;
+
+async function loadChallengeCoach() {
+  const out = $("coachChallengeSummary");
+  out.textContent = "";
+  try {
+    const doc = await db.collection("challenges").doc("current").get();
+    if (!doc.exists) {
+      out.textContent = "Keine Challenge gespeichert.";
+      return;
+    }
+    const c = doc.data();
+    $("challengeTitleInput").value = c.title || "";
+    $("challengeTargetKmInput").value = c.targetKm || "";
+    $("challengeStartInput").value = c.startDate || "";
+    $("challengeEndInput").value = c.endDate || "";
+    out.textContent = `Aktive Challenge: "${c.title}" – Ziel: ${c.targetKm} km pro Spieler (${c.startDate} bis ${c.endDate}).`;
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Laden.";
+  }
+}
+
+$("challengeLoadBtn").onclick = loadChallengeCoach;
+
+async function loadCurrentChallengeForPlayer() {
+  const titleEl = $("challengeTitle");
+  const periodEl = $("challengePeriod");
+  const progTextEl = $("challengeProgressText");
+  const fillEl = $("challengeProgressFill");
+  const msgEl = $("challengeMessage");
+
+  titleEl.textContent = "Keine Challenge aktiv";
+  periodEl.textContent = "";
+  progTextEl.textContent = "";
+  fillEl.style.width = "0%";
+  msgEl.textContent = "";
+
+  try {
+    const doc = await db.collection("challenges").doc("current").get();
+    if (!doc.exists) {
+      msgEl.textContent = "Derzeit keine Challenge eingestellt.";
+      return;
+    }
+    const c = doc.data();
+    titleEl.textContent = c.title || "Challenge";
+    periodEl.textContent = `Zeitraum: ${c.startDate} bis ${c.endDate}`;
+
+    const target = c.targetKm || 0;
+    if (!(target > 0)) return;
+
+    const runsSnap = await db.collection("runs")
+      .where("playerCode", "==", currentPlayer.code)
+      .where("date", ">=", c.startDate)
+      .where("date", "<=", c.endDate)
+      .get();
+
+    let sumKm = 0;
+    runsSnap.forEach(d => {
+      sumKm += d.data().km || 0;
+    });
+
+    const pct = Math.min(100, (sumKm / target) * 100);
+    fillEl.style.width = pct + "%";
+    progTextEl.textContent = `Dein Fortschritt: ${sumKm.toFixed(1)} / ${target.toFixed(1)} km (${pct.toFixed(0)}%)`;
+
+    const today = todayDateString();
+    if (today < c.startDate || today > c.endDate) {
+      msgEl.textContent = "Hinweis: du bist außerhalb des Challenge-Zeitraums.";
+    }
+  } catch (e) {
+    console.error(e);
+    msgEl.textContent = "Fehler beim Laden der Challenge.";
+  }
+}
+
+/* ===== TEAM QUEST (Coach) ===== */
+async function saveTeamQuest() {
+  const title = $("teamQuestTitleInput").value.trim();
+  const desc = $("teamQuestDescInput").value.trim();
+  const type = $("teamQuestTypeInput").value;
+  const targetValue = parseFloat($("teamQuestTargetInput").value || "0");
+  const startDate = $("teamQuestStartInput").value;
+  const endDate = $("teamQuestEndInput").value;
+  const out = $("coachTeamQuestSummary");
+
+  if (!title || !(targetValue > 0) || !startDate || !endDate) {
+    out.textContent = "Bitte Titel, Ziel und Zeitraum ausfüllen.";
+    return;
+  }
+
+  try {
+    await db.collection("teamQuests").doc("current").set({
+      title,
+      description: desc,
+      type,
+      targetValue,
+      startDate,
+      endDate
+    });
+    out.textContent = `Team Quest gespeichert: "${title}" (${startDate} bis ${endDate}, Ziel: ${targetValue} ${type === "km" ? "km" : "Stabi"}).`;
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Speichern.";
+  }
+}
+
+$("teamQuestSaveBtn").onclick = saveTeamQuest;
+
+async function loadTeamQuestCoach() {
+  const out = $("coachTeamQuestSummary");
+  out.textContent = "";
+  try {
+    const doc = await db.collection("teamQuests").doc("current").get();
+    if (!doc.exists) {
+      out.textContent = "Keine Team Quest gespeichert.";
+      return;
+    }
+    const q = doc.data();
+    $("teamQuestTitleInput").value = q.title || "";
+    $("teamQuestDescInput").value = q.description || "";
+    $("teamQuestTypeInput").value = q.type || "km";
+    $("teamQuestTargetInput").value = q.targetValue || "";
+    $("teamQuestStartInput").value = q.startDate || "";
+    $("teamQuestEndInput").value = q.endDate || "";
+    out.textContent = `Aktive Team Quest: "${q.title}" – Ziel: ${q.targetValue} (${q.type}) (${q.startDate} bis ${q.endDate}).`;
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Laden.";
+  }
+}
+
+$("teamQuestLoadBtn").onclick = loadTeamQuestCoach;
+
+  /* ===== COACH-LOGIN ===== */
+$("coachLoginBtn").onclick = () => {
+  const pin = $("coachPin").value.trim();
+  const msg = $("coachLoginMessage");
+  msg.textContent = "";
+
+  if (!COACH_PINS.includes(pin)) {
+    msg.textContent = "Falscher PIN.";
+    return;
+  }
+  const name = prompt("Coach-Name für Anzeige (z.B. Kevin):") || "Coach";
+  currentCoachName = name;
+  $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
+  hide("loginView");
+  hide("appView");
+  show("coachView");
+  loadCoachPlayers();
+  loadChallengeCoach();
+  loadTeamQuestCoach();
+};
+
+$("coachBackBtn").onclick = () => {
+  currentCoachName = null;
+  hide("coachView");
+  show("loginView");
+};
+
+/* ===== COACH SPIELERLISTE ===== */
+async function loadCoachPlayers() {
+  const tbody = $("coachPlayersBody");
+  const msg = $("coachActionMessage");
+  msg.textContent = "";
+  tbody.innerHTML = "<tr><td colspan='6'>Lade Spieler ...</td></tr>";
+
+  try {
+    const snap = await db.collection("players").get();
+    const players = [];
+    snap.forEach(d => players.push(d.data()));
+    players.sort((a, b) => (a.code || "").localeCompare(b.code || ""));
+
+    tbody.innerHTML = "";
+    if (players.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='6'>Noch keine Spieler.</td></tr>";
+      return;
+    }
+
+    for (const p of players) {
+      const tr = document.createElement("tr");
+      const yearText = p.birthYear ? `Jg. ${p.birthYear}` : "–";
+      const groupText = p.group ? ` (${p.group})` : "";
+      tr.innerHTML = `
+        <td>${p.code || ""}</td>
+        <td>${p.name || ""}<br><span class="small-text">${yearText}${groupText}</span></td>
+        <td>${(p.totalKm || 0).toFixed(1)}</td>
+        <td>${p.stabiCount || 0}</td>
+        <td>${p.xp || 0}</td>
+        <td>
+          <button class="coach-btn-details" data-code="${p.code}" data-name="${p.name || ""}">Details</button>
+          <button class="coach-btn-reset" data-code="${p.code}" data-name="${p.name || ""}">Reset</button>
+          <button class="coach-btn-delete" data-code="${p.code}" data-name="${p.name || ""}">Löschen</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    tbody.querySelectorAll(".coach-btn-reset").forEach(btn => {
+      btn.onclick = () => resetPlayerStats(btn.dataset.code, btn.dataset.name);
+    });
+    tbody.querySelectorAll(".coach-btn-delete").forEach(btn => {
+      btn.onclick = () => deletePlayer(btn.dataset.code, btn.dataset.name);
+    });
+    tbody.querySelectorAll(".coach-btn-details").forEach(btn => {
+      btn.onclick = () => showPlayerEntries(btn.dataset.code, btn.dataset.name);
+    });
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
+  }
+}
+
+$("coachRefreshBtn").onclick = loadCoachPlayers;
+
+async function resetPlayerStats(code, name) {
+  if (!confirm(`Km, Stabi und XP für ${name} (${code}) wirklich zurücksetzen und alle Einträge löschen?`)) return;
+  try {
+    const runsSnap = await db.collection("runs").where("playerCode", "==", code).get();
+    const stSnap = await db.collection("stabiSessions").where("playerCode", "==", code).get();
+    const batch = db.batch();
+    runsSnap.forEach(d => batch.delete(d.ref));
+    stSnap.forEach(d => batch.delete(d.ref));
+    batch.update(db.collection("players").doc(code), {
+      totalKm: 0,
+      stabiCount: 0,
+      xp: 0
+    });
+    await batch.commit();
+    $("coachActionMessage").textContent = "Reset durchgeführt.";
+    await loadCoachPlayers();
+  } catch (e) {
+    console.error(e);
+    $("coachActionMessage").textContent = "Fehler beim Reset.";
+  }
+}
+
+async function deletePlayer(code, name) {
+  if (!confirm(`Spieler ${name} (${code}) komplett löschen (inkl. aller Einträge)?`)) return;
+  try {
+    const runsSnap = await db.collection("runs").where("playerCode", "==", code).get();
+    const stSnap = await db.collection("stabiSessions").where("playerCode", "==", code).get();
+    const batch = db.batch();
+    runsSnap.forEach(d => batch.delete(d.ref));
+    stSnap.forEach(d => batch.delete(d.ref));
+    batch.delete(db.collection("players").doc(code));
+    await batch.commit();
+    $("coachActionMessage").textContent = "Spieler gelöscht.";
+    await loadCoachPlayers();
+  } catch (e) {
+    console.error(e);
+    $("coachActionMessage").textContent = "Fehler beim Löschen.";
+  }
+}
+
+/* ===== EINTRÄGE PRO SPIELER (Coach) ===== */
+async function showPlayerEntries(code, name) {
+  currentEditPlayerCode = code;
+  currentEditPlayerName = name;
+  $("coachEntriesTitle").textContent = `Einträge für ${name} (${code})`;
+  show("coachEntriesCard");
+  const tbody = $("coachEntriesBody");
+  tbody.innerHTML = "<tr><td colspan='6'>Lade Einträge ...</td></tr>";
+
+  try {
+    const [runsSnap, stSnap] = await Promise.all([
+      db.collection("runs").where("playerCode", "==", code).get(),
+      db.collection("stabiSessions").where("playerCode", "==", code).get()
+    ]);
+
+    const entries = [];
+    runsSnap.forEach(doc => {
+      const d = doc.data();
+      entries.push({
+        id: doc.id,
+        type: "run",
+        date: d.date,
+        value: d.km || 0,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
+      });
+    });
+    stSnap.forEach(doc => {
+      const d = doc.data();
+      entries.push({
+        id: doc.id,
+        type: "stabi",
+        date: d.date,
+        value: d.rounds || 1,
+        comment: d.comment || "",
+        suspicious: !!d.suspicious
+      });
+    });
+
+    entries.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+    tbody.innerHTML = "";
+    if (entries.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='6'>Keine Einträge.</td></tr>";
+      return;
+    }
+
+    for (const e of entries) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${e.date || ""}</td>
+        <td>${e.type === "run" ? "Lauf" : "Stabi"}</td>
+        <td>${e.type === "run" ? e.value.toFixed(1) + " km" : e.value + " R."}</td>
+        <td>${e.comment}</td>
+        <td>${e.suspicious ? "⚠" : ""}</td>
+        <td>
+          <button class="entry-delete">Löschen</button>
+        </td>
+      `;
+      const delBtn = tr.querySelector(".entry-delete");
+      delBtn.onclick = async () => {
+        if (!confirm("Eintrag wirklich löschen?")) return;
+        try {
+          const col = e.type === "run" ? "runs" : "stabiSessions";
+          await db.collection(col).doc(e.id).delete();
+          await recalcPlayerAggregates(code);
+          showPlayerEntries(code, name);
+        } catch (err) {
+          console.error(err);
+          alert("Fehler beim Löschen.");
+        }
+      };
+      tbody.appendChild(tr);
+    }
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
+  }
+}
+
+/* Aggregatwerte nach Löschen neu berechnen */
+async function recalcPlayerAggregates(code) {
+  const [runsSnap, stSnap] = await Promise.all([
+    db.collection("runs").where("playerCode", "==", code).get(),
+    db.collection("stabiSessions").where("playerCode", "==", code).get()
+  ]);
+
+  let totalKm = 0;
+  let stabiCount = 0;
+  let xp = 0;
+
+  runsSnap.forEach(d => {
+    const r = d.data();
+    const km = r.km || 0;
+    totalKm += km;
+    xp += Math.round(km * XP_PER_KM);
+  });
+
+  stSnap.forEach(d => {
+    const s = d.data();
+    const rounds = s.rounds || 1;
+    stabiCount += 1;
+    xp += rounds * XP_PER_STABI;
+  });
+
+  await db.collection("players").doc(code).update({
+    totalKm,
+    stabiCount,
+    xp
+  });
+}
+
+/* ===== CSV-EXPORT ===== */
+$("coachExportBtn").onclick = async () => {
+  try {
+    const snap = await db.collection("players").get();
+    const rows = [["Code", "Name", "Jahrgang", "Gruppe", "Km", "Stabi", "XP"]];
+    snap.forEach(d => {
+      const p = d.data();
+      rows.push([
+        p.code || "",
+        p.name || "",
+        p.birthYear || "",
+        p.group || "",
+        (p.totalKm || 0).toFixed(1),
+        p.stabiCount || 0,
+        p.xp || 0
+      ]);
+    });
+
+    const csv = rows.map(r => r.map(v => `"${(v + "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "panther_challenge_players.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error(e);
+    $("coachActionMessage").textContent = "Fehler beim CSV-Export.";
+  }
+};
+
+/* ===== AUSWERTUNG ZEITRAUM & AWARDS ===== */
+$("evalRunBtn").onclick = runEvalForRange;
+$("saveAwardBtn").onclick = saveAwardsForRange;
+
+async function runEvalForRange() {
+  const start = $("evalStartInput").value;
+  const end = $("evalEndInput").value;
+  const label = $("evalRangeLabel");
+  const tbody = $("evalTableBody");
+  const kmText = $("evalAwardKmText");
+  const stText = $("evalAwardStabiText");
+
+  label.textContent = "";
+  tbody.innerHTML = "";
+  kmText.textContent = "";
+  stText.textContent = "";
+  lastEvalAwards = null;
+
+  if (!start || !end) {
+    label.textContent = "Bitte Zeitraum auswählen.";
+    return;
+  }
+
+  label.textContent = `Zeitraum: ${start} bis ${end}`;
+  tbody.innerHTML = "<tr><td colspan='3'>Lade Daten ...</td></tr>";
+
+  try {
+    const [playersSnap, runsSnap, stSnap] = await Promise.all([
+      db.collection("players").get(),
+      db.collection("runs").where("date", ">=", start).where("date", "<=", end).get(),
+      db.collection("stabiSessions").where("date", ">=", start).where("date", "<=", end).get()
+    ]);
+
+    const players = {};
+    playersSnap.forEach(d => {
+      const p = d.data();
+      players[p.code] = {
+        code: p.code,
+        name: p.name || p.code,
+        km: 0,
+        stabi: 0
+      };
+    });
+
+    runsSnap.forEach(doc => {
+      const d = doc.data();
+      const p = players[d.playerCode];
+      if (p) {
+        p.km += d.km || 0;
+      }
+    });
+
+    stSnap.forEach(doc => {
+      const d = doc.data();
+      const p = players[d.playerCode];
+      if (p) {
+        p.stabi += 1;
+      }
+    });
+
+    const list = Object.values(players);
+    list.sort((a, b) => b.km - a.km);
+
+    tbody.innerHTML = "";
+    if (list.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='3'>Keine Daten.</td></tr>";
+      return;
+    }
+
+    list.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.name}</td>
+        <td>${p.km.toFixed(1)}</td>
+        <td>${p.stabi}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const kmWinner = list.reduce((best, p) => (p.km > (best?.km || 0) ? p : best), null);
+    const stWinner = list.reduce((best, p) => (p.stabi > (best?.stabi || 0) ? p : best), null);
+
+    if (kmWinner && kmWinner.km > 0) {
+      kmText.textContent = `Kilometer-Bester im Zeitraum: ${kmWinner.name} mit ${kmWinner.km.toFixed(1)} km.`;
+    } else {
+      kmText.textContent = "Kein Kilometer-Sieger im Zeitraum.";
+    }
+
+    if (stWinner && stWinner.stabi > 0) {
+      stText.textContent = `Stabi-Bester im Zeitraum: ${stWinner.name} mit ${stWinner.stabi} Stabi-Einheiten.`;
+    } else {
+      stText.textContent = "Kein Stabi-Sieger im Zeitraum.";
+    }
+
+    lastEvalAwards = {
+      startDate: start,
+      endDate: end,
+      kmWinnerName: kmWinner ? kmWinner.name : null,
+      kmValue: kmWinner ? kmWinner.km : 0,
+      stabiWinnerName: stWinner ? stWinner.name : null,
+      stabiValue: stWinner ? stWinner.stabi : 0
+    };
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='3'>Fehler beim Laden.</td></tr>";
+  }
+}
+
+async function saveAwardsForRange() {
+  if (!lastEvalAwards) {
+    $("awardSaveMessage").textContent = "Bitte zuerst Auswertung durchführen.";
+    return;
+  }
+
+  const kmTitle = $("awardTitleKmInput").value.trim() || "Kilometer König";
+  const stTitle = $("awardTitleStabiInput").value.trim() || "Stabi König";
+  const out = $("awardSaveMessage");
+
+  try {
+    await db.collection("awards").doc("current").set({
+      kmTitle,
+      kmWinnerName: lastEvalAwards.kmWinnerName,
+      kmValue: lastEvalAwards.kmValue,
+      kmStartDate: lastEvalAwards.startDate,
+      kmEndDate: lastEvalAwards.endDate,
+      stabiTitle,
+      stabiWinnerName: lastEvalAwards.stabiWinnerName,
+      stabiValue: lastEvalAwards.stabiValue,
+      stabiStartDate: lastEvalAwards.startDate,
+      stabiEndDate: lastEvalAwards.endDate
+    });
+    out.textContent = "Auszeichnungen gespeichert. Spieler sehen sie im Auszeichnungs-Block.";
+  } catch (e) {
+    console.error(e);
+    out.textContent = "Fehler beim Speichern.";
+  }
+}
+/* ===== DUELLE (Coach) ===== */
+$("duelSaveBtn").onclick = async () => {
+  const a = $("duelPlayerAInput").value.trim().toUpperCase();
+  const b = $("duelPlayerBInput").value.trim().toUpperCase();
+  const type = $("duelTypeInput").value;
+  const start = $("duelStartInput").value;
+  const end = $("duelEndInput").value;
+  const msg = $("duelAdminMessage");
+  msg.textContent = "";
+
+  if (!a || !b || !start || !end || a === b) {
+    msg.textContent = "Bitte Spieler, Zeitraum und Typ korrekt angeben (A != B).";
+    return;
+  }
+
+  if (end > CHALLENGE_END_DATE) {
+    msg.textContent = `Enddatum darf nicht nach ${CHALLENGE_END_DATE} liegen.`;
+    return;
+  }
+
+  if (daysBetweenStr(start, end) >= MAX_DUEL_DAYS) {
+    msg.textContent = `Duelle max. ${MAX_DUEL_DAYS} Tage lang.`;
+    return;
+  }
+
+  try {
+    await db.collection("duels").add({
+      playerA: a,
+      playerB: b,
+      type,
+      startDate: start,
+      endDate: end,
+      status: "active",
+      reward: "",
+      createdBy: "coach",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msg.textContent = "Duell gespeichert.";
+    await loadDuelsAdmin();
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Fehler beim Speichern.";
+  }
+};
+
+async function loadDuelsAdmin() {
+  const listEl = $("duelAdminList");
+  listEl.innerHTML = "Lade Duelle ...";
+
+  try {
+    const snap = await db.collection("duels").orderBy("startDate", "desc").get();
+    if (snap.empty) {
+      listEl.textContent = "Keine Duelle.";
+      return;
+    }
+    listEl.innerHTML = "";
+    snap.forEach(doc => {
+      const d = doc.data();
+      const div = document.createElement("div");
+      div.className = "duel-card-admin";
+      div.innerHTML = `
+        <div><strong>${d.playerA}</strong> vs <strong>${d.playerB}</strong> (${d.type === "km" ? "km" : "Stabi"})</div>
+        <div class="small-text">${d.startDate} bis ${d.endDate} – Status: ${d.status || "?"}</div>
+      `;
+      listEl.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    listEl.textContent = "Fehler beim Laden.";
+  }
+}
+
+/* ===== DUELLE (Spieler) – Gegnersliste ===== */
+async function loadPlayersForDuelSelect() {
+  const sel = $("duelOpponentSelect");
+  if (!currentPlayer) return;
+  sel.innerHTML = "";
+  try {
+    const snap = await db.collection("players").get();
+    const players = [];
+    snap.forEach(d => players.push(d.data()));
+    players.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    players.forEach(p => {
+      if (p.code === currentPlayer.code) return;
+      const opt = document.createElement("option");
+      opt.value = p.code;
+      opt.textContent = `${p.name} (${p.code})`;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ===== DUELLE (Spieler) – Duell anlegen ===== */
+$("duelCreateBtn").onclick = async () => {
+  if (!currentPlayer) return;
+  const opponent = $("duelOpponentSelect").value;
+  const type = $("duelTypePlayerInput").value;
+  const reward = $("duelRewardInput").value.trim();
+  const end = $("duelEndPlayerInput").value;
+  const msg = $("duelPlayerMessage");
+  msg.textContent = "";
+
+  if (!opponent || !end) {
+    msg.textContent = "Bitte Gegner und Enddatum wählen.";
+    return;
+  }
+
+  if (end > CHALLENGE_END_DATE) {
+    msg.textContent = `Enddatum darf nicht nach ${CHALLENGE_END_DATE} liegen.`;
+    return;
+  }
+
+  const today = todayDateString();
+  if (daysBetweenStr(today, end) >= MAX_DUEL_DAYS) {
+    msg.textContent = `Duell maximal ${MAX_DUEL_DAYS} Tage lang.`;
+    return;
+  }
+
+  try {
+    const snapPending = await db.collection("duels")
+      .where("status", "in", ["pending", "active"])
+      .where("playerA", "==", currentPlayer.code)
+      .get();
+    const snapPendingB = await db.collection("duels")
+      .where("status", "in", ["pending", "active"])
+      .where("playerB", "==", currentPlayer.code)
+      .get();
+    const pendingCount = snapPending.size + snapPendingB.size;
+    if (pendingCount >= MAX_PENDING_DUELS_PER_PLAYER) {
+      msg.textContent = `Max. ${MAX_PENDING_DUELS_PER_PLAYER} aktive/ausstehende Duelle erlaubt.`;
+      return;
+    }
+  } catch (e) {
+    console.warn("Duell-Limit-Prüfung fehlgeschlagen:", e);
+  }
+
+  try {
+    await db.collection("duels").add({
+      playerA: currentPlayer.code,
+      playerB: opponent,
+      type,
+      reward,
+      startDate: today,
+      endDate: end,
+      status: "pending",
+      createdBy: "player",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msg.textContent = "Duell-Anfrage gesendet.";
+    $("duelRewardInput").value = "";
+    await loadDuelsForPlayer();
+    await loadIncomingDuelsForPlayer();
+  } catch (e) {
+    console.error(e);
+    msg.textContent = "Fehler beim Senden der Anfrage.";
+  }
+};
+
+/* ===== DUELLE (Spieler) – Anfragen an dich ===== */
+async function loadIncomingDuelsForPlayer() {
+  const box = $("duelRequestsContainer");
+  if (!currentPlayer) {
+    box.textContent = "Keine offenen Anfragen.";
+    return;
+  }
+
+  try {
+    const snap = await db.collection("duels")
+      .where("playerB", "==", currentPlayer.code)
+      .where("status", "==", "pending")
+      .get();
+
+    if (snap.empty) {
+      box.textContent = "Keine offenen Anfragen.";
+      return;
+    }
+    box.innerHTML = "";
+    snap.forEach(doc => {
+      const d = doc.data();
+      const div = document.createElement("div");
+      div.className = "duel-card";
+      div.innerHTML = `
+        <div class="duel-vs">${d.playerA} fordert dich heraus (${d.type === "km" ? "km" : "Stabi"})</div>
+        <div class="duel-progress small-text">Ende: ${d.endDate} ${d.reward ? "– Einsatz: " + d.reward : ""}</div>
+        <button class="entry-btn entry-edit">Annehmen</button>
+        <button class="entry-btn entry-delete">Ablehnen</button>
+      `;
+      const [acceptBtn, denyBtn] = div.querySelectorAll("button");
+      acceptBtn.onclick = async () => {
+        try {
+          await doc.ref.update({ status: "active" });
+          await loadIncomingDuelsForPlayer();
+          await loadDuelsForPlayer();
+        } catch (e) {
+          console.error(e);
+          alert("Fehler beim Annehmen.");
+        }
+      };
+      denyBtn.onclick = async () => {
+        try {
+          await doc.ref.update({ status: "rejected" });
+          await loadIncomingDuelsForPlayer();
+          await loadDuelsForPlayer();
+        } catch (e) {
+          console.error(e);
+          alert("Fehler beim Ablehnen.");
+        }
+      };
+      box.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    box.textContent = "Fehler beim Laden.";
+  }
+}
+
+/* ===== DUELLE (Spieler) – Übersicht & Fortschritt ===== */
+async function loadDuelsForPlayer() {
+  const box = $("duelContainer");
+  if (!currentPlayer) {
+    box.textContent = "Keine aktiven Duelle.";
+    return;
+  }
+
+  try {
+    const [snapA, snapB] = await Promise.all([
+      db.collection("duels").where("playerA", "==", currentPlayer.code).get(),
+      db.collection("duels").where("playerB", "==", currentPlayer.code).get()
+    ]);
+
+    const duels = [];
+    snapA.forEach(doc => duels.push({ id: doc.id, ref: doc.ref, data: doc.data() }));
+    snapB.forEach(doc => duels.push({ id: doc.id, ref: doc.ref, data: doc.data() }));
+
+    if (duels.length === 0) {
+      box.textContent = "Keine Duelle.";
+      return;
+    }
+
+    box.innerHTML = "";
+
+    for (const dObj of duels) {
+      const d = dObj.data;
+      if (!["pending", "active", "finished"].includes(d.status)) continue;
+
+      const opponent = d.playerA === currentPlayer.code ? d.playerB : d.playerA;
+
+      const [aStats, bStats] = await Promise.all([
+        duelStatsForPlayer(d.playerA, d.type, d.startDate, d.endDate),
+        duelStatsForPlayer(d.playerB, d.type, d.startDate, d.endDate)
+      ]);
+
+      let myVal = d.playerA === currentPlayer.code ? aStats.value : bStats.value;
+      let oppVal = d.playerA === currentPlayer.code ? bStats.value : aStats.value;
+
+      const div = document.createElement("div");
+      div.className = "duel-card";
+      const typeLabel = d.type === "km" ? "km" : "Stabi";
+      let statusText = d.status;
+      if (d.status === "pending") statusText = "Ausstehend";
+      if (d.status === "active") statusText = "Aktiv";
+      if (d.status === "finished") statusText = "Beendet";
+
+      div.innerHTML = `
+        <div class="duel-vs">${d.playerA} vs ${d.playerB} (${typeLabel})</div>
+        <div class="duel-progress">
+          Du: ${myVal.toFixed ? myVal.toFixed(1) : myVal} – Gegner: ${oppVal.toFixed ? oppVal.toFixed(1) : oppVal}
+        </div>
+        <div class="small-text">
+          ${d.startDate} bis ${d.endDate} – Status: ${statusText}
+          ${d.reward ? " – Einsatz: " + d.reward : ""}
+        </div>
+      `;
+      box.appendChild(div);
+    }
+  } catch (e) {
+    console.error(e);
+    box.textContent = "Fehler beim Laden.";
+  }
+}
+
+async function duelStatsForPlayer(code, type, start, end) {
+  if (type === "km") {
+    const snap = await db.collection("runs")
+      .where("playerCode", "==", code)
+      .where("date", ">=", start)
+      .where("date", "<=", end)
+      .get();
+    let sum = 0;
+    snap.forEach(d => { sum += d.data().km || 0; });
+    return { value: sum };
+  } else {
+    const snap = await db.collection("stabiSessions")
+      .where("playerCode", "==", code)
+      .where("date", ">=", start)
+      .where("date", "<=", end)
+      .get();
+    let count = 0;
+    snap.forEach(() => { count += 1; });
+    return { value: count };
+  }
+}
+
+/* ===== AUTO-LOGIN BEI LADEN ===== */
+window.addEventListener("load", async () => {
+  const saved = localStorage.getItem("panther_code");
+  if (saved) {
+    $("loginCode").value = saved;
+    await loginWithCode();
+  } else {
+    show("loginView");
+  }
+  setupDuelEndInputLimits();
+  loadDuelsAdmin();
+});
+  
+</script>
+
 </body>
 </html>
+  

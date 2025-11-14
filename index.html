@@ -256,32 +256,37 @@
       margin:10px 0;
     }
 
-    .coach-btn-reset {
-      background:#ffcc00;
-      color:#111;
-      box-shadow:none;
+    .coach-btn-reset,
+    .coach-btn-delete,
+    .coach-btn-details,
+    .coach-btn-pdf {
       padding:4px 8px;
       border-radius:999px;
       font-size:0.75rem;
+      box-shadow:none;
+      border:none;
+      margin-right:3px;
+      margin-top:2px;
+    }
+
+    .coach-btn-reset {
+      background:#ffcc00;
+      color:#111;
     }
 
     .coach-btn-delete {
       background:#cc0000;
       color:#fff;
-      box-shadow:none;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:0.75rem;
     }
 
     .coach-btn-details {
       background:#555;
       color:#fff;
-      box-shadow:none;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:0.75rem;
-      margin-top:4px;
+    }
+
+    .coach-btn-pdf {
+      background:#0ea5e9;
+      color:#000;
     }
 
     .activity-item {
@@ -351,6 +356,60 @@
       border:none;
     }
 
+    .avatar-options {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:6px;
+    }
+
+    .avatar-option {
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:0.8rem;
+      border:1px solid rgba(255,255,255,0.2);
+      background:rgba(255,255,255,0.04);
+      color:#f5f5f5;
+      cursor:pointer;
+    }
+
+    .avatar-option.selected {
+      border-color: var(--panther-gold);
+      box-shadow:0 0 8px rgba(212,175,55,0.7);
+    }
+
+    .avatar-option.locked {
+      opacity:0.4;
+      cursor:not-allowed;
+    }
+
+    .duel-card {
+      padding:6px 8px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      margin-bottom:6px;
+      font-size:0.8rem;
+    }
+
+    .duel-vs {
+      font-weight:600;
+      margin-bottom:4px;
+    }
+
+    .duel-progress {
+      font-size:0.78rem;
+    }
+
+    .duel-card-admin {
+      padding:6px 8px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      margin-bottom:6px;
+      font-size:0.8rem;
+    }
+
     @media (max-width: 600px) {
       .header-title { font-size:1.15rem; }
       .logo { width:56px; }
@@ -361,6 +420,8 @@
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- jsPDF für PDF-Reports -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
@@ -476,6 +537,19 @@
       <div id="challengeMessage" class="small-text" style="margin-top:6px;"></div>
     </div>
 
+    <!-- Team Quest -->
+    <div class="card">
+      <h3>Team Quest</h3>
+      <div id="teamQuestTitle" style="font-weight:600;">Keine Team Quest aktiv</div>
+      <div id="teamQuestDesc" class="small-text"></div>
+      <div id="teamQuestPeriod" class="small-text"></div>
+      <div id="teamQuestProgressText" class="small-text" style="margin-top:6px;"></div>
+      <div class="progress-bar" style="margin-top:4px;">
+        <div id="teamQuestProgressFill" class="progress-fill"></div>
+      </div>
+      <div id="teamQuestMessage" class="small-text" style="margin-top:6px;"></div>
+    </div>
+
     <!-- Auszeichnungen -->
     <div class="card">
       <h3>Auszeichnungen</h3>
@@ -486,6 +560,14 @@
         <div id="awardStabiTitlePlayer" style="font-weight:600;">Noch keine Stabi-Auszeichnung</div>
         <div id="awardStabiSubtitlePlayer" class="small-text"></div>
       </div>
+    </div>
+
+    <!-- Avatar & Style -->
+    <div class="card">
+      <h3>Avatar & Style</h3>
+      <p class="small-text">Dein Style in der Rangliste. Manche Styles schaltest du erst mit mehr XP frei.</p>
+      <div id="avatarInfo" class="small-text"></div>
+      <div id="avatarOptions" class="avatar-options"></div>
     </div>
 
     <!-- Streak & Kalender -->
@@ -521,6 +603,43 @@
       </div>
       <p class="small-text">Letzte Läufe und Stabi-Einheiten der Mannschaft.</p>
       <div id="activityFeed"></div>
+    </div>
+
+    <!-- Duelle -->
+    <div class="card">
+      <h3>Deine Duelle</h3>
+      <p class="small-text">
+        Ein Duell darf maximal 7 Tage dauern. Die gesamte Challenge läuft nur bis 02.02.2026 – danach sind keine neuen Duelle mehr möglich.
+      </p>
+
+      <h4>Duell starten</h4>
+      <label>Gegner auswählen</label>
+      <select id="duelOpponentSelect"></select>
+
+      <label>Disziplin</label>
+      <select id="duelTypePlayerInput">
+        <option value="km">Kilometer</option>
+        <option value="stabi">Stabi-Einheiten</option>
+      </select>
+
+      <label>Belohnung (optional)</label>
+      <input type="text" id="duelRewardInput" maxlength="100" placeholder="z.B. Getränk, Süßigkeit, Extra-Pass">
+
+      <label>Enddatum (max. 7 Tage ab heute, spätestens 02.02.2026)</label>
+      <input type="date" id="duelEndPlayerInput">
+
+      <button id="duelCreateBtn">Duell-Anfrage senden</button>
+      <div id="duelPlayerMessage" class="small-text"></div>
+
+      <hr>
+
+      <h4>Offene Duell-Anfragen an dich</h4>
+      <div id="duelRequestsContainer" class="small-text">Keine offenen Anfragen.</div>
+
+      <hr>
+
+      <h4>Aktive Duelle</h4>
+      <div id="duelContainer" class="small-text">Keine aktiven Duelle.</div>
     </div>
 
     <!-- Tabs -->
@@ -575,7 +694,7 @@
           <div><span class="pill">5</span> Crunches – <a href="https://www.youtube.com/watch?v=Xyd_fa5zoEU" target="_blank">Video</a></div>
           <div><span class="pill">6</span> Superman – <a href="https://www.youtube.com/watch?v=z6PJMT2y8GQ" target="_blank">Video</a></div>
           <div><span class="pill">7</span> Lunges – <a href="https://www.youtube.com/watch?v=QOVaHwm-Q6U" target="_blank">Video</a></div>
-          <div><span class="pill">8</span> Beinheben – <a href="https://www.youtube.com/watch?v=JB2oyawG9KI" target="_blank">Video</a></div>
+          <div><span class="pill">8</span> Beinheben – <a href="https://www.youtube.com/watch?v=JB2oyawG9U" target="_blank">Video</a></div>
         </div>
       </div>
     </div>
@@ -596,7 +715,7 @@
         <button id="coachBackBtn" class="secondary small">Zurück</button>
       </div>
       <p class="small-text">
-        Übersicht aller Spieler. Km/Stabi/XP zurücksetzen, Spieler löschen, Challenge verwalten, Einträge bearbeiten und Auswertungen nach Zeitraum.
+        Übersicht aller Spieler. Km/Stabi/XP zurücksetzen, Spieler löschen, Challenge & Team-Quest, Duelle, Einträge bearbeiten und Auswertungen nach Zeitraum. PDF-Reports nur im Coach-Bereich.
       </p>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
@@ -606,7 +725,7 @@
 
       <!-- Challenge Config -->
       <div style="margin-bottom:12px;">
-        <h3>Challenge einstellen</h3>
+        <h3>Challenge einstellen (pro Spieler – km)</h3>
         <div class="flex-row">
           <div class="flex-grow">
             <label>Titel</label>
@@ -633,6 +752,84 @@
         </div>
         <div id="coachChallengeSummary" class="small-text" style="margin-top:4px;"></div>
         <div id="coachAwardSummary" class="small-text" style="margin-top:4px;"></div>
+      </div>
+
+      <!-- Team Quest Config -->
+      <div style="margin-bottom:12px;">
+        <h3>Team Quest einstellen</h3>
+        <p class="small-text">Gemeinsames Ziel für die gesamte Mannschaft (km oder Stabi). Wird allen Spielern angezeigt.</p>
+        <label>Titel</label>
+        <input type="text" id="teamQuestTitleInput" placeholder="z.B. 300 km Advent-Quest">
+        <label>Beschreibung</label>
+        <textarea id="teamQuestDescInput" placeholder="z.B. Gemeinsam schaffen wir 300 km bis Weihnachten!"></textarea>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Typ</label>
+            <select id="teamQuestTypeInput">
+              <option value="km">Kilometer (Laufen)</option>
+              <option value="stabi">Stabi-Einheiten</option>
+            </select>
+          </div>
+          <div class="flex-grow">
+            <label>Zielwert (gesamt)</label>
+            <input type="number" id="teamQuestTargetInput" step="0.1" placeholder="z.B. 300">
+          </div>
+        </div>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Start-Datum</label>
+            <input type="date" id="teamQuestStartInput">
+          </div>
+          <div class="flex-grow">
+            <label>End-Datum</label>
+            <input type="date" id="teamQuestEndInput">
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+          <button id="teamQuestSaveBtn" class="secondary small">Team Quest speichern</button>
+          <button id="teamQuestLoadBtn" class="secondary small">Team Quest laden</button>
+        </div>
+        <div id="coachTeamQuestSummary" class="small-text" style="margin-top:4px;"></div>
+      </div>
+
+      <!-- Duelle Config Coach -->
+      <div style="margin-bottom:12px;">
+        <h3>Duelle anlegen (Coach)</h3>
+        <p class="small-text">
+          1vs1 Duelle auf km oder Stabi. Max. 7 Tage, spätestens bis 02.02.2026. Spieler sehen ihre aktiven Duelle in der App.
+        </p>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Player A (Code)</label>
+            <input type="text" id="duelPlayerAInput" placeholder="z.B. U13-01">
+          </div>
+          <div class="flex-grow">
+            <label>Player B (Code)</label>
+            <input type="text" id="duelPlayerBInput" placeholder="z.B. U13-02">
+          </div>
+        </div>
+        <div class="flex-row">
+          <div class="flex-grow">
+            <label>Typ</label>
+            <select id="duelTypeInput">
+              <option value="km">Kilometer</option>
+              <option value="stabi">Stabi-Einheiten</option>
+            </select>
+          </div>
+          <div class="flex-grow">
+            <label>Start-Datum</label>
+            <input type="date" id="duelStartInput">
+          </div>
+          <div class="flex-grow">
+            <label>End-Datum</label>
+            <input type="date" id="duelEndInput">
+          </div>
+        </div>
+        <button id="duelSaveBtn" class="secondary small">Duell speichern</button>
+        <div id="duelAdminMessage" class="small-text"></div>
+
+        <h4 style="margin-top:10px;">Duelle (Übersicht)</h4>
+        <div id="duelAdminList" class="small-text"></div>
       </div>
 
       <table class="coach-table">
@@ -724,6 +921,11 @@ const firebaseConfig = {
 const TEAM_GOAL_KM = 2200;
 const DEFAULT_GOAL = 80;
 
+/* Challenge-Ende und Duell-Regeln */
+const CHALLENGE_END_DATE = "2026-02-02";
+const MAX_DUEL_DAYS = 7; // max. 7 Tage (0–6 Differenz)
+const MAX_PENDING_DUELS_PER_PLAYER = 3;
+
 /* XP-System */
 const XP_PER_KM = 10;
 const XP_PER_STABI = 40;
@@ -743,6 +945,24 @@ let lastEvalAwards = null;
 const $ = id => document.getElementById(id);
 function show(id){ $(id).style.display=""; }
 function hide(id){ $(id).style.display="none"; }
+
+/* ===== Hilfsfunktionen Datum ===== */
+function todayDateString(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function daysBetween(a,b){
+  const msPerDay = 24*60*60*1000;
+  const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utc2 - utc1) / msPerDay);
+}
+
+function daysBetweenStr(startStr, endStr){
+  const a = new Date(startStr + "T00:00:00");
+  const b = new Date(endStr + "T00:00:00");
+  return daysBetween(a,b);
+}
 
 /* ===== XP-Tier ===== */
 function getXpTier(xp){
@@ -774,13 +994,15 @@ async function loginWithCode(){
         totalKm:0,
         stabiCount:0,
         goalKm: DEFAULT_GOAL,
-        xp: 0
+        xp: 0,
+        avatarStyle: "basic"
       });
-      currentPlayer = { code, name, totalKm:0, stabiCount:0, goalKm:DEFAULT_GOAL, xp:0 };
+      currentPlayer = { code, name, totalKm:0, stabiCount:0, goalKm:DEFAULT_GOAL, xp:0, avatarStyle:"basic" };
     } else {
       currentPlayer = doc.data();
       if(currentPlayer.xp === undefined) currentPlayer.xp = 0;
       if(currentPlayer.goalKm === undefined) currentPlayer.goalKm = DEFAULT_GOAL;
+      if(!currentPlayer.avatarStyle) currentPlayer.avatarStyle = "basic";
     }
 
     localStorage.setItem("panther_code", code);
@@ -845,14 +1067,52 @@ function renderBadges(player){
   });
 }
 
-/* ===== STREAK & KALENDER ===== */
-function daysBetween(a,b){
-  const msPerDay = 24*60*60*1000;
-  const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
-  const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
-  return Math.round((utc2 - utc1) / msPerDay);
+/* ===== AVATAR / STYLES ===== */
+function renderAvatarOptions(player){
+  const container = $("avatarOptions");
+  const info = $("avatarInfo");
+  const xp = player.xp || 0;
+  const style = player.avatarStyle || "basic";
+
+  const options = [
+    {id:"basic", label:"Basic", requirement:0, desc:"Standard"},
+    {id:"silver", label:"Silber-Frame", requirement:300, desc:"ab 300 XP"},
+    {id:"gold", label:"Gold-Frame", requirement:800, desc:"ab 800 XP"},
+    {id:"night", label:"Night Panther", requirement:1200, desc:"ab 1200 XP"}
+  ];
+
+  info.textContent = `Deine XP: ${xp}. Styles werden mit mehr XP freigeschaltet.`;
+
+  container.innerHTML = "";
+  options.forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.className = "avatar-option" + (style === opt.id ? " selected" : "");
+    const locked = xp < opt.requirement;
+    if(locked && opt.id !== "basic"){
+      btn.classList.add("locked");
+    }
+    btn.textContent = `${opt.label} ${opt.requirement>0 ? "("+opt.desc+")" : ""}`;
+
+    if(!locked || opt.id === "basic"){
+      btn.onclick = async ()=>{
+        try {
+          await db.collection("players").doc(player.code).update({
+            avatarStyle: opt.id
+          });
+          currentPlayer.avatarStyle = opt.id;
+          await refreshDashboard();
+        } catch(e){
+          console.error(e);
+          alert("Fehler beim Speichern des Styles.");
+        }
+      };
+    }
+
+    container.appendChild(btn);
+  });
 }
 
+/* ===== STREAK & KALENDER ===== */
 async function loadStreakAndCalendar(){
   const streakText = $("streakText");
   const bestStreakText = $("bestStreakText");
@@ -895,7 +1155,6 @@ async function loadStreakAndCalendar(){
     dateStrings.sort();
     const dates = dateStrings.map(ds => new Date(ds + "T00:00:00"));
 
-    // Bester Streak
     let best = 1;
     let current = 1;
     for(let i=1;i<dates.length;i++){
@@ -909,13 +1168,12 @@ async function loadStreakAndCalendar(){
     }
     if(current > best) best = current;
 
-    // Aktueller Streak (ab heute rückwärts)
     let currentStreak = 0;
     const today = new Date();
     const lastDate = dates[dates.length-1];
     const diffLast = daysBetween(lastDate, today);
 
-    if(diffLast === 0){ // letzter Eintrag heute
+    if(diffLast === 0){
       currentStreak = 1;
       let last = lastDate;
       for(let i = dates.length-2; i>=0; i--){
@@ -934,10 +1192,9 @@ async function loadStreakAndCalendar(){
     streakText.textContent = `Aktuelle Streak: ${currentStreak} Tag(e) in Folge Training.`;
     bestStreakText.textContent = `Bester Streak bisher: ${best} Tag(e).`;
 
-    // Kalender für aktuellen Monat
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth(); // 0-11
+    const month = now.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
@@ -962,10 +1219,8 @@ async function loadStreakAndCalendar(){
       grid.appendChild(div);
     });
 
-    // JS getDay: So=0,...Sa=6; wir wollen Mo=1,...So=7
-    let startIndex = firstDay.getDay(); // 0..6
-    if(startIndex === 0) startIndex = 7; // Sonntag
-    // Anzahl Leerslots vor dem 1.
+    let startIndex = firstDay.getDay();
+    if(startIndex === 0) startIndex = 7;
     for(let i=1;i<startIndex;i++){
       const empty = document.createElement("div");
       empty.className = "calendar-day empty";
@@ -1011,7 +1266,6 @@ async function loadAwardForPlayer(){
     }
     const a = doc.data();
 
-    // Lauf-Auszeichnung
     if(a.kmWinnerName){
       kmTitleEl.textContent = a.kmTitle || "Kilometer König";
       let line = "🏆 " + a.kmWinnerName;
@@ -1027,7 +1281,6 @@ async function loadAwardForPlayer(){
       kmSubEl.textContent = "";
     }
 
-    // Stabi-Auszeichnung
     if(a.stabiWinnerName){
       stTitleEl.textContent = a.stabiTitle || "Stabi König";
       let line2 = "💪 " + a.stabiWinnerName;
@@ -1052,6 +1305,104 @@ async function loadAwardForPlayer(){
   }
 }
 
+/* ===== TEAM QUEST – SPIELER ===== */
+async function loadTeamQuestForPlayer(){
+  const titleEl = $("teamQuestTitle");
+  const descEl = $("teamQuestDesc");
+  const periodEl = $("teamQuestPeriod");
+  const progressTextEl = $("teamQuestProgressText");
+  const fillEl = $("teamQuestProgressFill");
+  const msgEl = $("teamQuestMessage");
+
+  titleEl.textContent = "Keine Team Quest aktiv";
+  descEl.textContent = "";
+  periodEl.textContent = "";
+  progressTextEl.textContent = "";
+  fillEl.style.width = "0%";
+  msgEl.textContent = "";
+
+  try {
+    const doc = await db.collection("teamQuests").doc("current").get();
+    if(!doc.exists){
+      msgEl.textContent = "Derzeit keine Team Quest eingestellt.";
+      return;
+    }
+    const q = doc.data();
+    titleEl.textContent = q.title || "Team Quest";
+    descEl.textContent = q.description || "";
+    periodEl.textContent = `Zeitraum: ${q.startDate} bis ${q.endDate}`;
+
+    const type = q.type || "km";
+    const target = q.targetValue || 0;
+    if(target <= 0){
+      progressTextEl.textContent = "";
+      return;
+    }
+
+    let sum = 0;
+    if(type === "km"){
+      const runsSnap = await db.collection("runs")
+        .where("date",">=",q.startDate)
+        .where("date","<=",q.endDate)
+        .get();
+      runsSnap.forEach(doc=>{
+        const d = doc.data();
+        sum += d.km || 0;
+      });
+    } else {
+      const stabiSnap = await db.collection("stabiSessions")
+        .where("date",">=",q.startDate)
+        .where("date","<=",q.endDate)
+        .get();
+      stabiSnap.forEach(doc=>{
+        const d = doc.data();
+        sum += 1;
+      });
+    }
+
+    const pct = Math.min(100, (sum / target) * 100);
+    fillEl.style.width = pct + "%";
+
+    if(type === "km"){
+      progressTextEl.textContent = `Fortschritt Team: ${sum.toFixed(1)} / ${target.toFixed(1)} km (${pct.toFixed(0)}%)`;
+    } else {
+      progressTextEl.textContent = `Fortschritt Team: ${sum} / ${target} Stabi-Einheiten (${pct.toFixed(0)}%)`;
+    }
+
+    const today = todayDateString();
+    if(today < q.startDate || today > q.endDate){
+      msgEl.textContent = "Hinweis: du bist außerhalb des Team-Quest-Zeitraums.";
+    }
+
+  } catch(e){
+    console.error(e);
+    msgEl.textContent = "Fehler beim Laden der Team Quest.";
+  }
+}
+
+/* ===== DUELL-ENDDATUM LIMITS (SPIELER) ===== */
+function setupDuelEndInputLimits(){
+  const input = $("duelEndPlayerInput");
+  if(!input) return;
+  const today = todayDateString();
+  if(today > CHALLENGE_END_DATE){
+    input.disabled = true;
+    input.value = "";
+    return;
+  }
+  const todayDate = new Date(today + "T00:00:00");
+  const plus6 = new Date(todayDate);
+  plus6.setDate(plus6.getDate() + (MAX_DUEL_DAYS - 1));
+  const plus6Str = plus6.toISOString().slice(0,10);
+  const maxDate = plus6Str < CHALLENGE_END_DATE ? plus6Str : CHALLENGE_END_DATE;
+  input.disabled = false;
+  input.min = today;
+  input.max = maxDate;
+  if(!input.value || input.value < today || input.value > maxDate){
+    input.value = maxDate;
+  }
+}
+
 /* ===== DASHBOARD ===== */
 async function refreshDashboard(){
   const playersSnap = await db.collection("players").get();
@@ -1062,6 +1413,7 @@ async function refreshDashboard(){
     let p = d.data();
     if(p.xp === undefined) p.xp = 0;
     if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
+    if(!p.avatarStyle) p.avatarStyle = "basic";
     teamKm += p.totalKm || 0;
     players.push(p);
   });
@@ -1095,7 +1447,6 @@ async function refreshDashboard(){
   $("personalGoalLabel").textContent = goal;
   $("personalGoalInput").value = goal;
 
-  // Leaderboard + Anti-Cheat-Markierung
   players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
 
   let tbody = $("leaderboardBody");
@@ -1120,11 +1471,17 @@ async function refreshDashboard(){
   players.forEach((p,i)=>{
     const xpP = p.xp || 0;
     const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
+
+    let styleEmoji = "";
+    if(p.avatarStyle === "silver") styleEmoji = "⚪ ";
+    if(p.avatarStyle === "gold") styleEmoji = "👑 ";
+    if(p.avatarStyle === "night") styleEmoji = "🌙 ";
+
     let tr = document.createElement("tr");
     if(p.code===currentPlayer.code) tr.classList.add("highlight-row");
     tr.innerHTML = `
       <td>${i+1}.</td>
-      <td>${p.name}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
+      <td>${styleEmoji}${p.name}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
       <td>${(p.totalKm||0).toFixed(1)}</td>
       <td>${p.stabiCount||0}</td>
       <td>${xpP}</td>
@@ -1133,10 +1490,16 @@ async function refreshDashboard(){
   });
 
   renderBadges(currentPlayer);
+  renderAvatarOptions(currentPlayer);
+  setupDuelEndInputLimits();
+  await loadPlayersForDuelSelect();
   await loadCurrentChallengeForPlayer();
+  await loadTeamQuestForPlayer();
   await loadAwardForPlayer();
   await loadStreakAndCalendar();
   await loadActivityFeed();
+  await loadDuelsForPlayer();
+  await loadIncomingDuelsForPlayer();
 }
 
 $("refreshBtn").onclick = refreshDashboard;
@@ -1172,7 +1535,7 @@ $("saveRunBtn").onclick = async ()=>{
     return;
   }
 
-  const suspicious = km > 25; // Anti-Cheat
+  const suspicious = km > 25;
 
   try {
     await db.collection("runs").add({
@@ -1218,7 +1581,6 @@ $("saveStabiBtn").onclick = async ()=>{
   }
 
   try {
-    // Anti-Cheat: mehr als 2 Stabi-Sessions pro Tag markieren
     const existingDay = await db.collection("stabiSessions")
       .where("playerCode","==",currentPlayer.code)
       .where("date","==",date)
@@ -1312,10 +1674,10 @@ async function loadCoachView(){
       const p = doc.data();
       if(p.xp === undefined) p.xp = 0;
       if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
+      if(!p.avatarStyle) p.avatarStyle = "basic";
       players.push(p);
     });
 
-    // Anti-Cheat Markierungen
     const suspiciousPlayers = new Set();
     try {
       const runsSusp = await db.collection("runs").where("suspicious","==",true).get();
@@ -1349,6 +1711,7 @@ async function loadCoachView(){
             <button class="coach-btn-reset">Reset</button>
             <button class="coach-btn-delete">Löschen</button>
             <button class="coach-btn-details">Einträge</button>
+            <button class="coach-btn-pdf">PDF</button>
           </td>
         </tr>
       `);
@@ -1357,6 +1720,8 @@ async function loadCoachView(){
     tbody.innerHTML = rows.join("") || "<tr><td colspan='6'>Keine Spieler vorhanden.</td></tr>";
     await loadChallengeSummary();
     await loadCoachAwardSummary();
+    await loadTeamQuestSummary();
+    await loadDuelAdminList();
   } catch(e){
     console.error(e);
     tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
@@ -1395,6 +1760,81 @@ async function loadCoachAwardSummary(){
   }
 }
 
+/* ===== TEAM QUEST – COACH ===== */
+$("teamQuestSaveBtn").onclick = async ()=>{
+  const title = $("teamQuestTitleInput").value.trim();
+  const desc = $("teamQuestDescInput").value.trim();
+  const type = $("teamQuestTypeInput").value;
+  const target = parseFloat($("teamQuestTargetInput").value || 0);
+  const start = $("teamQuestStartInput").value;
+  const end = $("teamQuestEndInput").value;
+  const msg = $("coachActionMessage");
+
+  if(!title || !start || !end || !(target > 0)){
+    msg.textContent = "Team Quest: Titel, Zeitraum und Zielwert nötig.";
+    return;
+  }
+  if(start > end){
+    msg.textContent = "Team Quest: Startdatum darf nicht nach Enddatum liegen.";
+    return;
+  }
+
+  try {
+    await db.collection("teamQuests").doc("current").set({
+      title,
+      description: desc,
+      type,
+      targetValue: target,
+      startDate: start,
+      endDate: end,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msg.textContent = "Team Quest gespeichert.";
+    await loadTeamQuestSummary();
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler beim Speichern der Team Quest.";
+  }
+};
+
+$("teamQuestLoadBtn").onclick = ()=>{
+  loadTeamQuestSummary(true);
+};
+
+async function loadTeamQuestSummary(fillForm=false){
+  const el = $("coachTeamQuestSummary");
+  try {
+    const doc = await db.collection("teamQuests").doc("current").get();
+    if(!doc.exists){
+      el.textContent = "Keine Team Quest gesetzt.";
+      if(fillForm){
+        $("teamQuestTitleInput").value = "";
+        $("teamQuestDescInput").value = "";
+        $("teamQuestTypeInput").value = "km";
+        $("teamQuestTargetInput").value = "";
+        $("teamQuestStartInput").value = "";
+        $("teamQuestEndInput").value = "";
+      }
+      return;
+    }
+    const q = doc.data();
+    const typeText = q.type === "stabi" ? "Stabi" : "km";
+    el.textContent = `Aktuelle Team Quest: "${q.title}" – ${q.startDate} bis ${q.endDate}, Ziel: ${q.targetValue} ${typeText}.`;
+
+    if(fillForm){
+      $("teamQuestTitleInput").value = q.title || "";
+      $("teamQuestDescInput").value = q.description || "";
+      $("teamQuestTypeInput").value = q.type || "km";
+      $("teamQuestTargetInput").value = q.targetValue || "";
+      $("teamQuestStartInput").value = q.startDate || "";
+      $("teamQuestEndInput").value = q.endDate || "";
+    }
+  } catch(e){
+    console.error(e);
+    el.textContent = "Fehler beim Laden der Team Quest.";
+  }
+}
+
 /* ===== COACH CSV EXPORT ===== */
 $("coachExportBtn").onclick = async ()=>{
   const msg = $("coachActionMessage");
@@ -1419,7 +1859,7 @@ $("coachExportBtn").onclick = async ()=>{
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const today = new Date().toISOString().slice(0,10);
+    const today = todayDateString();
     a.href = url;
     a.download = `panther_u13_export_${today}.csv`;
     document.body.appendChild(a);
@@ -1434,7 +1874,7 @@ $("coachExportBtn").onclick = async ()=>{
   }
 };
 
-/* ===== COACH-AKTIONEN (Reset / Delete / Details) ===== */
+/* ===== COACH-AKTIONEN (Reset / Delete / Details / PDF) ===== */
 $("coachPlayersBody").addEventListener("click", async (e)=>{
   const target = e.target;
   const tr = target.closest("tr");
@@ -1486,6 +1926,10 @@ $("coachPlayersBody").addEventListener("click", async (e)=>{
     currentEditPlayerCode = code;
     currentEditPlayerName = name;
     loadPlayerEntries(code, name);
+  }
+
+  if(target.classList.contains("coach-btn-pdf")){
+    generatePlayerPdf(code, name);
   }
 });
 
@@ -1680,7 +2124,7 @@ $("coachEntriesBody").addEventListener("click", async (e)=>{
   }
 });
 
-/* ===== CHALLENGE – COACH-SEITE ===== */
+/* ===== CHALLENGE – COACH ===== */
 $("challengeSaveBtn").onclick = async ()=>{
   const title = $("challengeTitleInput").value.trim();
   const start = $("challengeStartInput").value;
@@ -1741,7 +2185,7 @@ async function loadChallengeSummary(fillForm=false){
   }
 }
 
-/* ===== CHALLENGE – SPIELER-SEITE ===== */
+/* ===== CHALLENGE – SPIELER ===== */
 async function loadCurrentChallengeForPlayer(){
   const titleEl = $("challengeTitle");
   const periodEl = $("challengePeriod");
@@ -1790,7 +2234,7 @@ async function loadCurrentChallengeForPlayer(){
     fillEl.style.width = pct + "%";
     progTextEl.textContent = `Dein Fortschritt: ${sumKm.toFixed(1)} / ${targetKm.toFixed(1)} km (${pct.toFixed(0)}%)`;
 
-    const today = new Date().toISOString().slice(0,10);
+    const today = todayDateString();
     if(today < start || today > end){
       msgEl.textContent = "Hinweis: du bist außerhalb des Challenge-Zeitraums.";
     }
@@ -1806,7 +2250,6 @@ async function loadActivityFeed(){
   container.innerHTML = "<div class='small-text'>Lade Aktivitäten...</div>";
 
   try {
-    // Spieler für Name-Mapping laden
     const playersSnap = await db.collection("players").get();
     const nameMap = {};
     playersSnap.forEach(doc=>{
@@ -1814,13 +2257,11 @@ async function loadActivityFeed(){
       nameMap[p.code] = p.name || p.code;
     });
 
-    // Letzte Läufe
     const runsSnap = await db.collection("runs")
       .orderBy("createdAt","desc")
       .limit(20)
       .get();
 
-    // Letzte Stabi-Sessions
     const stabiSnap = await db.collection("stabiSessions")
       .orderBy("createdAt","desc")
       .limit(20)
@@ -1895,6 +2336,618 @@ async function loadActivityFeed(){
 
 $("refreshFeedBtn").onclick = loadActivityFeed;
 
+/* ===== DUELLE – COACH SEITE ===== */
+$("duelSaveBtn").onclick = async ()=>{
+  const a = $("duelPlayerAInput").value.trim().toUpperCase();
+  const b = $("duelPlayerBInput").value.trim().toUpperCase();
+  const type = $("duelTypeInput").value;
+  const start = $("duelStartInput").value;
+  const end = $("duelEndInput").value;
+  const msg = $("duelAdminMessage");
+
+  if(!a || !b || !start || !end || a === b){
+    msg.textContent = "Daten unvollständig oder Spieler gleich.";
+    return;
+  }
+  if(start > end){
+    msg.textContent = "Startdatum darf nicht nach Enddatum liegen.";
+    return;
+  }
+  if(end > CHALLENGE_END_DATE){
+    msg.textContent = "Enddatum darf nicht nach 02.02.2026 liegen.";
+    return;
+  }
+  const diff = daysBetweenStr(start,end);
+  if(diff < 0 || diff >= MAX_DUEL_DAYS){
+    msg.textContent = "Ein Duell darf maximal 7 Tage dauern.";
+    return;
+  }
+
+  try {
+    await db.collection("duels").add({
+      playerA: a,
+      playerB: b,
+      type,
+      startDate: start,
+      endDate: end,
+      rewardText: null,
+      status: "active",
+      createdBy: "coach",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msg.textContent = "Duell gespeichert.";
+    $("duelPlayerAInput").value = "";
+    $("duelPlayerBInput").value = "";
+    $("duelStartInput").value = "";
+    $("duelEndInput").value = "";
+    await loadDuelAdminList();
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler beim Speichern des Duells.";
+  }
+};
+
+async function loadDuelAdminList(){
+  const box = $("duelAdminList");
+  box.textContent = "Lade Duelle...";
+  try {
+    const snap = await db.collection("duels")
+      .orderBy("createdAt","desc")
+      .limit(30)
+      .get();
+    if(snap.empty){
+      box.textContent = "Keine Duelle angelegt.";
+      return;
+    }
+    const items = [];
+    snap.forEach(doc=>{
+      const d = doc.data();
+      items.push({id:doc.id, ...d});
+    });
+    box.innerHTML = "";
+    items.forEach(d=>{
+      const div = document.createElement("div");
+      div.className = "duel-card-admin";
+      div.dataset.id = d.id;
+      div.dataset.playerA = d.playerA;
+      div.dataset.playerB = d.playerB;
+      div.dataset.type = d.type || "km";
+      div.dataset.start = d.startDate || "";
+      div.dataset.end = d.endDate || "";
+      div.dataset.status = d.status || "active";
+
+      const typeText = d.type === "stabi" ? "Stabi" : "km";
+      const status = d.status || "active";
+      const reward = d.rewardText ? ` · Belohnung: ${d.rewardText}` : "";
+
+      let statusLine = `Status: ${status}`;
+      if(status === "finished"){
+        if(d.draw){
+          statusLine += " (Unentschieden)";
+        } else if(d.winnerName){
+          const val = typeof d.winnerValue === "number"
+            ? (d.type === "km" ? d.winnerValue.toFixed(1) + " km" : d.winnerValue + " Stabi")
+            : "";
+          statusLine += ` · Gewinner: ${d.winnerName}${val ? " ("+val+")" : ""}`;
+        }
+      }
+
+      div.innerHTML = `
+        <div><strong>${d.playerA} vs ${d.playerB}</strong> · ${typeText} · ${d.startDate} bis ${d.endDate}${reward}</div>
+        <div class="small-text">${statusLine}</div>
+        <div style="margin-top:4px;">
+          ${status === "active" ? '<button class="entry-btn entry-edit duel-finish-btn">Duell beenden</button>' : ''}
+          <button class="entry-btn entry-delete duel-delete-btn">Löschen</button>
+        </div>
+      `;
+      box.appendChild(div);
+    });
+  } catch(e){
+    console.error(e);
+    box.textContent = "Fehler beim Laden der Duelle.";
+  }
+}
+
+/* Coach-Duell-Actions (beenden / löschen) */
+$("duelAdminList").addEventListener("click", async (e)=>{
+  const btn = e.target;
+  const card = btn.closest(".duel-card-admin");
+  if(!card) return;
+  const id = card.dataset.id;
+  const status = card.dataset.status;
+  const playerA = card.dataset.playerA;
+  const playerB = card.dataset.playerB;
+  const type = card.dataset.type;
+  const start = card.dataset.start;
+  const end = card.dataset.end;
+  const msg = $("duelAdminMessage");
+
+  if(btn.classList.contains("duel-finish-btn")){
+    if(status !== "active"){
+      msg.textContent = "Dieses Duell ist nicht mehr aktiv.";
+      return;
+    }
+    if(!confirm("Duell jetzt beenden und Gewinner fixieren?")) return;
+    try {
+      await finishDuelAsCoach(id, playerA, playerB, type, start, end);
+      await loadDuelAdminList();
+      await loadDuelsForPlayer(); // falls Coach auch Spieler ist und eingeloggt war
+    } catch(e){
+      console.error(e);
+      msg.textContent = "Fehler beim Beenden des Duells.";
+    }
+  }
+
+  if(btn.classList.contains("duel-delete-btn")){
+    if(!confirm("Dieses Duell wirklich löschen?")) return;
+    try {
+      await db.collection("duels").doc(id).delete();
+      msg.textContent = "Duell gelöscht.";
+      await loadDuelAdminList();
+    } catch(e){
+      console.error(e);
+      msg.textContent = "Fehler beim Löschen des Duells.";
+    }
+  }
+});
+
+async function finishDuelAsCoach(duelId, playerA, playerB, type, startDate, endDate){
+  const msg = $("duelAdminMessage");
+  let aVal = 0;
+  let bVal = 0;
+
+  if(!startDate || !endDate){
+    msg.textContent = "Duell hat kein gültiges Datum.";
+    return;
+  }
+
+  try {
+    if(type === "km"){
+      const runsA = await db.collection("runs")
+        .where("playerCode","==",playerA)
+        .where("date",">=",startDate)
+        .where("date","<=",endDate)
+        .get();
+      runsA.forEach(doc=>{
+        const d = doc.data();
+        aVal += d.km || 0;
+      });
+
+      const runsB = await db.collection("runs")
+        .where("playerCode","==",playerB)
+        .where("date",">=",startDate)
+        .where("date","<=",endDate)
+        .get();
+      runsB.forEach(doc=>{
+        const d = doc.data();
+        bVal += d.km || 0;
+      });
+    } else {
+      const stA = await db.collection("stabiSessions")
+        .where("playerCode","==",playerA)
+        .where("date",">=",startDate)
+        .where("date","<=",endDate)
+        .get();
+      stA.forEach(()=>{ aVal += 1; });
+
+      const stB = await db.collection("stabiSessions")
+        .where("playerCode","==",playerB)
+        .where("date",">=",startDate)
+        .where("date","<=",endDate)
+        .get();
+      stB.forEach(()=>{ bVal += 1; });
+    }
+
+    const ref = db.collection("duels").doc(duelId);
+
+    if(aVal === bVal){
+      await ref.update({
+        status: "finished",
+        draw: true,
+        winnerCode: null,
+        winnerName: null,
+        winnerValue: null,
+        loserCode: null,
+        loserName: null,
+        loserValue: null,
+        finishedBy: currentCoachName || null,
+        finishedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      msg.textContent = "Duell als Unentschieden abgeschlossen.";
+      return;
+    }
+
+    const winnerCode = aVal > bVal ? playerA : playerB;
+    const loserCode  = aVal > bVal ? playerB : playerA;
+    const winnerVal  = aVal > bVal ? aVal : bVal;
+    const loserVal   = aVal > bVal ? bVal : aVal;
+
+    const [docA, docB] = await Promise.all([
+      db.collection("players").doc(playerA).get(),
+      db.collection("players").doc(playerB).get()
+    ]);
+    const nameA = docA.exists ? (docA.data().name || playerA) : playerA;
+    const nameB = docB.exists ? (docB.data().name || playerB) : playerB;
+
+    const winnerName = winnerCode === playerA ? nameA : nameB;
+    const loserName  = loserCode === playerA ? nameA : nameB;
+
+    await ref.update({
+      status: "finished",
+      draw: false,
+      winnerCode,
+      winnerName,
+      winnerValue: winnerVal,
+      loserCode,
+      loserName,
+      loserValue: loserVal,
+      finishedBy: currentCoachName || null,
+      finishedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    msg.textContent = `Duell beendet. Gewinner: ${winnerName}.`;
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler bei der Auswertung des Duells.";
+  }
+}
+
+/* ===== SPIELER: GEGNERLISTE FÜR DUELL ===== */
+async function loadPlayersForDuelSelect(){
+  const select = $("duelOpponentSelect");
+  if(!select || !currentPlayer) return;
+  try {
+    const snap = await db.collection("players").get();
+    const list = [];
+    snap.forEach(doc=>{
+      const p = doc.data();
+      if(p.code !== currentPlayer.code){
+        list.push(p);
+      }
+    });
+    list.sort((a,b)=> (a.name || a.code).localeCompare(b.name || b.code, "de"));
+    select.innerHTML = "";
+    if(list.length === 0){
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Keine anderen Spieler vorhanden";
+      select.appendChild(opt);
+      select.disabled = true;
+      return;
+    }
+    select.disabled = false;
+    list.forEach(p=>{
+      const opt = document.createElement("option");
+      opt.value = p.code;
+      opt.textContent = `${p.name || p.code} (${p.code})`;
+      select.appendChild(opt);
+    });
+  } catch(e){
+    console.error(e);
+  }
+}
+
+/* ===== SPIELER: DUELL-ANFRAGE ERSTELLEN ===== */
+$("duelCreateBtn").onclick = createDuelRequest;
+
+async function createDuelRequest(){
+  const msg = $("duelPlayerMessage");
+  msg.textContent = "";
+  if(!currentPlayer){
+    msg.textContent = "Fehler: kein Spieler geladen.";
+    return;
+  }
+
+  const opp = $("duelOpponentSelect").value;
+  const type = $("duelTypePlayerInput").value;
+  const rewardRaw = $("duelRewardInput").value.trim();
+  const end = $("duelEndPlayerInput").value;
+  const today = todayDateString();
+
+  if(!opp){
+    msg.textContent = "Bitte einen Gegner auswählen.";
+    return;
+  }
+  if(today > CHALLENGE_END_DATE){
+    msg.textContent = "Die Challenge ist fast zu Ende – neue Duelle sind nicht mehr möglich.";
+    return;
+  }
+  if(!end){
+    msg.textContent = "Bitte ein Enddatum wählen.";
+    return;
+  }
+  if(end > CHALLENGE_END_DATE){
+    msg.textContent = "Enddatum darf nicht nach 02.02.2026 liegen.";
+    return;
+  }
+  if(end < today){
+    msg.textContent = "Enddatum darf nicht in der Vergangenheit liegen.";
+    return;
+  }
+
+  const diff = daysBetweenStr(today, end);
+  if(diff < 0 || diff >= MAX_DUEL_DAYS){
+    msg.textContent = "Ein Duell darf maximal 7 Tage dauern.";
+    return;
+  }
+
+  let rewardText = rewardRaw;
+  if(rewardText.length > 100){
+    rewardText = rewardText.slice(0,100);
+  }
+
+  try {
+    const pendSnap = await db.collection("duels")
+      .where("createdBy","==",currentPlayer.code)
+      .where("status","==","pending")
+      .get();
+    if(pendSnap.size >= MAX_PENDING_DUELS_PER_PLAYER){
+      msg.textContent = "Du hast bereits zu viele offene Duell-Anfragen.";
+      return;
+    }
+
+    await db.collection("duels").add({
+      playerA: currentPlayer.code,
+      playerB: opp,
+      type,
+      startDate: today,
+      endDate: end,
+      rewardText: rewardText || null,
+      status: "pending",
+      createdBy: currentPlayer.code,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    msg.textContent = "Duell-Anfrage wurde gesendet.";
+    $("duelRewardInput").value = "";
+    setupDuelEndInputLimits();
+    await loadDuelsForPlayer();
+    await loadIncomingDuelsForPlayer();
+    await loadDuelAdminList();
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler beim Senden der Duell-Anfrage.";
+  }
+}
+
+/* ===== SPIELER: DUELLE-ANSICHT ===== */
+async function loadDuelsForPlayer(){
+  const box = $("duelContainer");
+  if(!currentPlayer){
+    box.textContent = "Keine aktiven Duelle.";
+    return;
+  }
+  const code = currentPlayer.code;
+  const today = todayDateString();
+
+  try {
+    const snapA = await db.collection("duels")
+      .where("playerA","==",code).get();
+    const snapB = await db.collection("duels")
+      .where("playerB","==",code).get();
+
+    const duels = [];
+    snapA.forEach(doc=> duels.push({id:doc.id, ...doc.data()}));
+    snapB.forEach(doc=> duels.push({id:doc.id, ...doc.data()}));
+
+    const activeDuels = duels.filter(d=>{
+      const status = d.status || "active";
+      if(status !== "active") return false;
+      if(!d.startDate || !d.endDate) return false;
+      if(today < d.startDate || today > d.endDate) return false;
+      return true;
+    });
+
+    if(activeDuels.length === 0){
+      box.textContent = "Keine aktiven Duelle.";
+      return;
+    }
+
+    const playersSnap = await db.collection("players").get();
+    const nameMap = {};
+    playersSnap.forEach(doc=>{
+      const p = doc.data();
+      nameMap[p.code] = p.name || p.code;
+    });
+
+    box.innerHTML = "";
+    for(const d of activeDuels){
+      const otherCode = d.playerA === code ? d.playerB : d.playerA;
+      const myCode = code;
+      const type = d.type || "km";
+      const reward = d.rewardText || "keine festgelegte Belohnung";
+
+      let myVal = 0;
+      let otherVal = 0;
+
+      if(type === "km"){
+        const runsMy = await db.collection("runs")
+          .where("playerCode","==",myCode)
+          .where("date",">=",d.startDate)
+          .where("date","<=",d.endDate)
+          .get();
+        runsMy.forEach(doc=>{
+          const r = doc.data();
+          myVal += r.km || 0;
+        });
+
+        const runsOther = await db.collection("runs")
+          .where("playerCode","==",otherCode)
+          .where("date",">=",d.startDate)
+          .where("date","<=",d.endDate)
+          .get();
+        runsOther.forEach(doc=>{
+          const r = doc.data();
+          otherVal += r.km || 0;
+        });
+      } else {
+        const stMy = await db.collection("stabiSessions")
+          .where("playerCode","==",myCode)
+          .where("date",">=",d.startDate)
+          .where("date","<=",d.endDate)
+          .get();
+        stMy.forEach(doc=>{ myVal += 1; });
+
+        const stOther = await db.collection("stabiSessions")
+          .where("playerCode","==",otherCode)
+          .where("date",">=",d.startDate)
+          .where("date","<=",d.endDate)
+          .get();
+        stOther.forEach(doc=>{ otherVal += 1; });
+      }
+
+      const div = document.createElement("div");
+      div.className = "duel-card";
+      const typeText = type === "stabi" ? "Stabi" : "km";
+      const myName = nameMap[myCode] || myCode;
+      const otherName = nameMap[otherCode] || otherCode;
+
+      let status = "";
+      if(myVal > otherVal) status = "Du führst.";
+      else if(myVal < otherVal) status = "Du liegst hinten.";
+      else status = "Unentschieden.";
+
+      div.innerHTML = `
+        <div class="duel-vs">${myName} vs ${otherName} · ${typeText}</div>
+        <div class="duel-progress">
+          Du: ${type==="km" ? myVal.toFixed(1) : myVal} · Gegner: ${type==="km" ? otherVal.toFixed(1) : otherVal}<br>
+          Zeitraum: ${d.startDate} bis ${d.endDate}<br>
+          Belohnung: ${reward}<br>
+          ${status}
+        </div>
+      `;
+      box.appendChild(div);
+    }
+
+  } catch(e){
+    console.error(e);
+    box.textContent = "Fehler beim Laden der Duelle.";
+  }
+}
+
+/* ===== SPIELER: OFFENE DUELL-ANFRAGEN ===== */
+async function loadIncomingDuelsForPlayer(){
+  const box = $("duelRequestsContainer");
+  if(!currentPlayer){
+    box.textContent = "Keine offenen Anfragen.";
+    return;
+  }
+  const code = currentPlayer.code;
+
+  try {
+    const snap = await db.collection("duels")
+      .where("playerB","==",code)
+      .where("status","==","pending")
+      .get();
+
+    if(snap.empty){
+      box.textContent = "Keine offenen Anfragen.";
+      return;
+    }
+
+    const playersSnap = await db.collection("players").get();
+    const nameMap = {};
+    playersSnap.forEach(doc=>{
+      const p = doc.data();
+      nameMap[p.code] = p.name || p.code;
+    });
+
+    const today = todayDateString();
+
+    box.innerHTML = "";
+    snap.forEach(doc=>{
+      const d = doc.data();
+      const id = doc.id;
+      const challengerName = nameMap[d.playerA] || d.playerA;
+      const typeText = d.type === "stabi" ? "Stabi" : "km";
+      const reward = d.rewardText || "keine festgelegte Belohnung";
+
+      const expired = !d.endDate || d.endDate < today || d.endDate > CHALLENGE_END_DATE;
+      const div = document.createElement("div");
+      div.className = "duel-card";
+      let text = `
+        <div class="duel-vs">${challengerName} fordert dich heraus (${typeText})</div>
+        <div class="duel-progress">
+          Zeitraum: ${d.startDate} bis ${d.endDate || "-"}<br>
+          Belohnung: ${reward}<br>
+      `;
+      if(expired){
+        text += `<span class="small-text">Diese Anfrage ist abgelaufen und sollte abgelehnt werden.</span><br>`;
+      }
+      text += `
+          <button class="entry-btn entry-edit duel-accept" data-id="${id}">Annehmen</button>
+          <button class="entry-btn entry-delete duel-reject" data-id="${id}">Ablehnen</button>
+        </div>
+      `;
+      div.innerHTML = text;
+      box.appendChild(div);
+    });
+  } catch(e){
+    console.error(e);
+    box.textContent = "Fehler beim Laden der Anfragen.";
+  }
+}
+
+$("duelRequestsContainer").addEventListener("click", async (e)=>{
+  const btn = e.target;
+  const id = btn.dataset.id;
+  if(!id || !currentPlayer) return;
+  const msg = $("duelPlayerMessage");
+
+  if(btn.classList.contains("duel-accept")){
+    try {
+      const ref = db.collection("duels").doc(id);
+      const doc = await ref.get();
+      if(!doc.exists){
+        msg.textContent = "Anfrage existiert nicht mehr.";
+        await loadIncomingDuelsForPlayer();
+        return;
+      }
+      const d = doc.data();
+      if(d.playerB !== currentPlayer.code || d.status !== "pending"){
+        msg.textContent = "Diese Anfrage ist nicht mehr gültig.";
+        await loadIncomingDuelsForPlayer();
+        return;
+      }
+      if(d.endDate > CHALLENGE_END_DATE){
+        msg.textContent = "Enddatum liegt nach 02.02.2026 – Anfrage wird abgelehnt.";
+        await ref.update({status:"rejected"});
+        await loadIncomingDuelsForPlayer();
+        return;
+      }
+      const diff = daysBetweenStr(d.startDate, d.endDate);
+      if(diff < 0 || diff >= MAX_DUEL_DAYS){
+        msg.textContent = "Dieses Duell überschreitet die maximale Dauer und wird abgelehnt.";
+        await ref.update({status:"rejected"});
+        await loadIncomingDuelsForPlayer();
+        return;
+      }
+
+      await ref.update({status:"active"});
+      msg.textContent = "Duell angenommen.";
+      await loadIncomingDuelsForPlayer();
+      await loadDuelsForPlayer();
+      await loadDuelAdminList();
+    } catch(e){
+      console.error(e);
+      msg.textContent = "Fehler beim Annehmen der Anfrage.";
+    }
+  }
+
+  if(btn.classList.contains("duel-reject")){
+    try {
+      const ref = db.collection("duels").doc(id);
+      await ref.update({status:"rejected"});
+      msg.textContent = "Anfrage abgelehnt.";
+      await loadIncomingDuelsForPlayer();
+      await loadDuelAdminList();
+    } catch(e){
+      console.error(e);
+      msg.textContent = "Fehler beim Ablehnen der Anfrage.";
+    }
+  }
+});
+
 /* ===== AUSWERTUNG ZEITRAUM (COACH) ===== */
 $("evalRunBtn").onclick = runEvaluation;
 $("saveAwardBtn").onclick = saveAwardFromEval;
@@ -1928,7 +2981,6 @@ async function runEvaluation(){
   tbody.innerHTML = "<tr><td colspan='3'>Berechne...</td></tr>";
 
   try {
-    // Namen holen
     const playersSnap = await db.collection("players").get();
     const nameMap = {};
     playersSnap.forEach(doc=>{
@@ -1936,7 +2988,7 @@ async function runEvaluation(){
       nameMap[d.code] = d.name || d.code;
     });
 
-    const sums = {}; // code -> {name, km, stabi}
+    const sums = {};
 
     const runsSnap = await db.collection("runs")
       .where("date",">=",start)
@@ -1989,7 +3041,6 @@ async function runEvaluation(){
       tbody.appendChild(tr);
     });
 
-    // Beste Laufen / Beste Stabi
     let bestKm = null;
     let bestStabi = null;
     list.forEach(row=>{
@@ -2022,7 +3073,6 @@ async function runEvaluation(){
       bestStabi
     };
 
-    // Titel vorbelegen, falls leer
     if(bestKm && !$("awardTitleKmInput").value.trim()){
       $("awardTitleKmInput").value = `Kilometer König ${start} bis ${end}`;
     }
@@ -2080,12 +3130,64 @@ async function saveAwardFromEval(){
   }
 }
 
+/* ===== PDF-REPORTS (nur Coach) ===== */
+async function generatePlayerPdf(code, name){
+  const { jsPDF } = window.jspdf || {};
+  if(!jsPDF){
+    alert("jsPDF nicht geladen.");
+    return;
+  }
+
+  try {
+    const docSnap = await db.collection("players").doc(code).get();
+    if(!docSnap.exists){
+      alert("Spieler nicht gefunden.");
+      return;
+    }
+    const p = docSnap.data();
+    const km = p.totalKm || 0;
+    const stabi = p.stabiCount || 0;
+    const xp = p.xp || 0;
+    const goal = p.goalKm || DEFAULT_GOAL;
+    const tier = getXpTier(xp);
+    const level = Math.floor(xp / 100) + 1;
+
+    const pdf = new jsPDF();
+    const today = todayDateString();
+
+    pdf.setFontSize(16);
+    pdf.text("Young Panthers U13 – Leistungsbericht", 10, 15);
+    pdf.setFontSize(11);
+    pdf.text("Datum: " + today, 10, 22);
+
+    pdf.text("Spieler: " + name, 10, 32);
+    pdf.text("Code: " + code, 10, 38);
+
+    pdf.line(10, 42, 200, 42);
+
+    pdf.text("Gesamt-Kilometer: " + km.toFixed(1) + " km", 10, 52);
+    pdf.text("Persönliches Ziel: " + goal + " km", 10, 58);
+    pdf.text("Stabi-Einheiten: " + stabi, 10, 64);
+    pdf.text("XP: " + xp + " (Level " + level + ", " + tier.name + ")", 10, 70);
+
+    pdf.text("Einschätzung / Notizen Trainer:", 10, 82);
+    pdf.rect(10, 85, 190, 40);
+
+    pdf.save(`panther_${code}_${today}.pdf`);
+  } catch(e){
+    console.error(e);
+    alert("Fehler beim Erstellen des PDFs.");
+  }
+}
+
 /* ===== AUTO LOGIN FÜR SPIELER ===== */
 window.onload = ()=>{
   let saved = localStorage.getItem("panther_code");
   if(saved){
     $("loginCode").value = saved;
     loginWithCode();
+  } else {
+    setupDuelEndInputLimits();
   }
 };
 </script>

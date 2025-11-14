@@ -262,7 +262,10 @@
   <div id="coachView" style="display:none;">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2>Coach-Admin – Spielerübersicht</h2>
+        <div>
+          <h2>Coach-Admin – Spielerübersicht</h2>
+          <div id="coachNameLabel" class="small-text"></div>
+        </div>
         <button id="coachBackBtn" class="secondary small">Zurück zum Login</button>
       </div>
       <p class="small-text">
@@ -299,8 +302,10 @@ const firebaseConfig = {
 };
 const TEAM_GOAL_KM = 2200;
 const DEFAULT_GOAL = 80;
-/* Coach-PIN hier ändern, wenn du willst */
-const COACH_PIN = "1234";
+
+/* Drei gültige Coach-PINs – alle mit vollen Rechten */
+const COACH_PINS = ["1234", "5678", "9999"];
+let currentCoachName = null;
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -377,16 +382,16 @@ async function refreshDashboard(){
   $("welcomeText").textContent = "Servus, " + currentPlayer.name + " 🐾";
   $("playerCodeLabel").textContent = "Code: " + currentPlayer.code;
 
-  $("playerKm").textContent = currentPlayer.totalKm.toFixed(1);
+  $("playerKm").textContent = (currentPlayer.totalKm || 0).toFixed(1);
   $("playerGoalKm").textContent = currentPlayer.goalKm;
   $("playerKmFill").style.width = ((currentPlayer.totalKm/currentPlayer.goalKm)*100)+"%";
 
-  $("playerStabiCount").textContent = currentPlayer.stabiCount;
+  $("playerStabiCount").textContent = currentPlayer.stabiCount || 0;
 
   $("teamKm").textContent = teamKm.toFixed(1);
   $("teamKmFill").style.width = ((teamKm/TEAM_GOAL_KM)*100)+"%";
 
-  players.sort((a,b)=>b.totalKm-a.totalKm);
+  players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
 
   let tbody = $("leaderboardBody");
   tbody.innerHTML = "";
@@ -481,10 +486,20 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
 $("coachLoginBtn").onclick = ()=>{
   const pin = $("coachPin").value.trim();
   const msg = $("coachLoginMessage");
-  if(pin !== COACH_PIN){
+  if(!COACH_PINS.includes(pin)){
     msg.textContent = "Falscher PIN.";
     return;
   }
+
+  const name = prompt("Bitte deinen Namen als Coach eingeben (Anzeige):");
+  if(!name){
+    msg.textContent = "Kein Name eingegeben.";
+    return;
+  }
+
+  currentCoachName = name.trim();
+  $("coachNameLabel").textContent = "Eingeloggt als: " + currentCoachName;
+
   $("coachPin").value = "";
   msg.textContent = "";
 
@@ -499,7 +514,7 @@ $("coachBackBtn").onclick = ()=>{
   show("loginView");
 };
 
-$("coachRefreshBtn").onclick = loadCoachView);
+$("coachRefreshBtn").onclick = loadCoachView;
 
 async function loadCoachView(){
   const tbody = $("coachPlayersBody");

@@ -50,11 +50,12 @@
     .progress-bar { height: 12px; background:#ddd; border-radius:999px; overflow:hidden; }
     .progress-fill { height: 100%; background: linear-gradient(90deg,var(--panther-gold),#ff8a00); width:0%; transition:width .3s; }
 
-    .leaderboard-table { width:100%; border-collapse:collapse; margin-top:8px; }
-    .leaderboard-table th, .leaderboard-table td {
+    .leaderboard-table, .coach-table { width:100%; border-collapse:collapse; margin-top:8px; }
+    .leaderboard-table th, .leaderboard-table td,
+    .coach-table th, .coach-table td {
       padding:6px 4px; font-size:0.9rem; border-bottom:1px solid #eee;
     }
-    .leaderboard-table th { font-weight:700; color:#555; }
+    .leaderboard-table th, .coach-table th { font-weight:700; color:#555; }
     .highlight-row { background: rgba(212,175,55,0.15); font-weight:600; }
 
     .tabs { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
@@ -72,6 +73,22 @@
       display:inline-block; padding:2px 7px; border-radius:999px;
       background:#eee; font-size:0.75rem; margin-right:6px;
     }
+
+    .flex-row {
+      display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start;
+    }
+    .flex-grow { flex:1; }
+
+    .coach-btn-reset {
+      background:#ffcc00; color:#111;
+    }
+    .coach-btn-delete {
+      background:#cc0000; color:#fff;
+    }
+
+    @media (max-width: 600px) {
+      .flex-row { flex-direction:column; }
+    }
   </style>
 
   <!-- Firebase compat SDKs -->
@@ -82,21 +99,32 @@
 <body>
 <div class="app-container">
 
-  <!-- LOGIN -->
+  <!-- LOGIN VIEW (Spieler + Coach) -->
   <div id="loginView" class="card">
-    <h2>Anmeldung</h2>
-    <p class="small-text">Panther-Code eingeben (z.B. U13-01). Beim ersten Mal wird der Name abgefragt.</p>
+    <h2>Panther Challenge – Login</h2>
+    <div class="flex-row">
+      <div class="flex-grow">
+        <h3>Spieler-Login</h3>
+        <p class="small-text">Panther-Code eingeben (z.B. U13-01). Beim ersten Mal wird der Name abgefragt.</p>
+        <label>Panther-Code</label>
+        <input type="text" id="loginCode" placeholder="U13-01">
+        <button id="loginBtn">Einloggen</button>
+        <button id="clearSavedBtn" class="secondary small">Gespeicherten Code löschen</button>
+        <div id="loginMessage" class="small-text"></div>
+      </div>
 
-    <label>Panther-Code</label>
-    <input type="text" id="loginCode" placeholder="U13-01">
-
-    <button id="loginBtn">Einloggen</button>
-    <button id="clearSavedBtn" class="secondary small">Gespeicherten Code löschen</button>
-
-    <div id="loginMessage" class="small-text"></div>
+      <div class="flex-grow">
+        <h3>Coach-Login</h3>
+        <p class="small-text">Nur für Trainer (PIN-geschützt).</p>
+        <label>Coach-PIN</label>
+        <input type="password" id="coachPin" placeholder="PIN">
+        <button id="coachLoginBtn" class="secondary">Coach-Login</button>
+        <div id="coachLoginMessage" class="small-text"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- APP -->
+  <!-- SPIELER-APP -->
   <div id="appView" style="display:none;">
 
     <!-- Spieler + Team -->
@@ -197,7 +225,7 @@
       <!-- Info -->
       <div id="info-tab" class="tab-content">
         <h3>Stabi-Programm</h3>
-        <p class="small-text">2× pro Woche – 3 Runden à 45/15 Sekunden</p>
+        <p class="small-text">2× pro Woche – 3 Runden à 45/15 Sekunden. Saubere Ausführung vor Geschwindigkeit.</p>
 
         <div class="link-list">
           <div><span class="pill">1</span> Plank</div>
@@ -230,10 +258,37 @@
 
   </div><!-- appView -->
 
+  <!-- COACH-ADMIN-VIEW -->
+  <div id="coachView" style="display:none;">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Coach-Admin – Spielerübersicht</h2>
+        <button id="coachBackBtn" class="secondary small">Zurück zum Login</button>
+      </div>
+      <p class="small-text">
+        Hier kannst du alle Spieler sehen, Km/Stabi zurücksetzen oder Spieler komplett löschen (inkl. Läufe & Stabi-Sessions).
+      </p>
+      <button id="coachRefreshBtn" class="secondary small">Aktualisieren</button>
+      <table class="coach-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Km</th>
+            <th>Stabi</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody id="coachPlayersBody"></tbody>
+      </table>
+      <div id="coachActionMessage" class="small-text"></div>
+    </div>
+  </div>
+
 </div><!-- container -->
 
 <script>
-/* ===== Firebase Config ===== */
+/* ===== KONFIG ===== */
 const firebaseConfig = {
     apiKey: "AIzaSyAFKhJXx01HEb_kCkdnjkNLo7Y-M7DUSxg",
     authDomain: "panthers-winter-challenge.firebaseapp.com",
@@ -242,21 +297,22 @@ const firebaseConfig = {
     messagingSenderId: "9880532994",
     appId: "1:9880532994:web:3e53f62fe2043cfca2cf1b"
 };
+const TEAM_GOAL_KM = 2200;
+const DEFAULT_GOAL = 80;
+/* Coach-PIN hier ändern, wenn du willst */
+const COACH_PIN = "1234";
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* ===== VARIABLES ===== */
 let currentPlayer = null;
-const TEAM_GOAL_KM = 2200;
-const DEFAULT_GOAL = 80;
 
 /* ===== HELPERS ===== */
 const $ = id => document.getElementById(id);
 function show(id){ $(id).style.display=""; }
 function hide(id){ $(id).style.display="none"; }
 
-/* ===== LOGIN ===== */
+/* ===== PLAYER LOGIN ===== */
 async function loginWithCode(){
   const code = $("loginCode").value.trim().toUpperCase();
   const msg  = $("loginMessage");
@@ -265,27 +321,30 @@ async function loginWithCode(){
     msg.textContent = "Bitte Code eingeben."; return;
   }
 
-  let doc = await db.collection("players").doc(code).get();
-  if(!doc.exists){
-    // Spieler neu anlegen
-    let name = prompt("Neuer Panther-Code. Name eingeben:");
-    if(!name){ msg.textContent="Keine Eingabe."; return; }
+  try {
+    let doc = await db.collection("players").doc(code).get();
+    if(!doc.exists){
+      let name = prompt("Neuer Panther-Code. Name eingeben:");
+      if(!name){ msg.textContent="Keine Eingabe."; return; }
+      await db.collection("players").doc(code).set({
+        code, name, totalKm:0, stabiCount:0, goalKm: DEFAULT_GOAL
+      });
+      currentPlayer = { code, name, totalKm:0, stabiCount:0, goalKm:DEFAULT_GOAL };
+    } else {
+      currentPlayer = doc.data();
+    }
 
-    await db.collection("players").doc(code).set({
-      code, name, totalKm:0, stabiCount:0, goalKm: DEFAULT_GOAL
-    });
+    localStorage.setItem("panther_code", code);
 
-    currentPlayer = { code, name, totalKm:0, stabiCount:0, goalKm:DEFAULT_GOAL };
-  } else {
-    currentPlayer = doc.data();
+    hide("loginView");
+    hide("coachView");
+    show("appView");
+
+    await refreshDashboard();
+  } catch(e){
+    console.error(e);
+    msg.textContent = "Fehler bei Anmeldung.";
   }
-
-  localStorage.setItem("panther_code", code);
-
-  hide("loginView");
-  show("appView");
-
-  await refreshDashboard();
 }
 
 $("loginBtn").onclick = loginWithCode;
@@ -337,8 +396,8 @@ async function refreshDashboard(){
     tr.innerHTML = `
       <td>${i+1}.</td>
       <td>${p.name}${p.code===currentPlayer.code?" 🐾":""}</td>
-      <td>${p.totalKm.toFixed(1)}</td>
-      <td>${p.stabiCount}</td>
+      <td>${(p.totalKm||0).toFixed(1)}</td>
+      <td>${p.stabiCount||0}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -382,12 +441,13 @@ $("saveRunBtn").onclick = async ()=>{
 /* ===== STABI SPEICHERN ===== */
 $("saveStabiBtn").onclick = async ()=>{
   let date = $("stabiDate").value;
-  let rounds = parseInt($("stabiRounds").value);
 
   if(!date){
     $("stabiMessage").textContent = "Datum eingeben.";
     return;
   }
+
+  let rounds = parseInt($("stabiRounds").value);
 
   await db.collection("stabiSessions").add({
     playerCode: currentPlayer.code,
@@ -417,7 +477,112 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
   };
 });
 
-/* ===== AUTO LOGIN ===== */
+/* ===== COACH LOGIN ===== */
+$("coachLoginBtn").onclick = ()=>{
+  const pin = $("coachPin").value.trim();
+  const msg = $("coachLoginMessage");
+  if(pin !== COACH_PIN){
+    msg.textContent = "Falscher PIN.";
+    return;
+  }
+  $("coachPin").value = "";
+  msg.textContent = "";
+
+  hide("loginView");
+  hide("appView");
+  show("coachView");
+  loadCoachView();
+};
+
+$("coachBackBtn").onclick = ()=>{
+  hide("coachView");
+  show("loginView");
+};
+
+$("coachRefreshBtn").onclick = loadCoachView);
+
+async function loadCoachView(){
+  const tbody = $("coachPlayersBody");
+  const msg = $("coachActionMessage");
+  msg.textContent = "";
+  tbody.innerHTML = "<tr><td colspan='5'>Lade Spieler...</td></tr>";
+
+  try {
+    const snap = await db.collection("players").get();
+    let rows = [];
+    snap.forEach(doc=>{
+      const p = doc.data();
+      rows.push(`
+        <tr data-code="${p.code}">
+          <td>${p.code}</td>
+          <td>${p.name}</td>
+          <td>${(p.totalKm||0).toFixed(1)}</td>
+          <td>${p.stabiCount||0}</td>
+          <td>
+            <button class="coach-btn-reset small">Reset</button>
+            <button class="coach-btn-delete small">Löschen</button>
+          </td>
+        </tr>
+      `);
+    });
+    tbody.innerHTML = rows.join("") || "<tr><td colspan='5'>Keine Spieler vorhanden.</td></tr>";
+  } catch(e){
+    console.error(e);
+    tbody.innerHTML = "<tr><td colspan='5'>Fehler beim Laden.</td></tr>";
+  }
+}
+
+/* ===== COACH-AKTIONEN (Reset / Delete) ===== */
+$("coachPlayersBody").addEventListener("click", async (e)=>{
+  const target = e.target;
+  const tr = target.closest("tr");
+  if(!tr) return;
+  const code = tr.dataset.code;
+  const msg = $("coachActionMessage");
+
+  if(target.classList.contains("coach-btn-reset")){
+    if(!confirm("Km und Stabi für " + code + " auf 0 setzen? Läufe/Stabi-Einträge bleiben bestehen.")) return;
+    try {
+      await db.collection("players").doc(code).update({
+        totalKm: 0,
+        stabiCount: 0
+      });
+      msg.textContent = "Reset für " + code + " durchgeführt.";
+      loadCoachView();
+    } catch(e){
+      console.error(e);
+      msg.textContent = "Fehler beim Reset.";
+    }
+  }
+
+  if(target.classList.contains("coach-btn-delete")){
+    if(!confirm("Spieler " + code + " komplett löschen inkl. Läufen & Stabi-Sessions?")) return;
+    try {
+      // Läufe löschen
+      const runsSnap = await db.collection("runs").where("playerCode","==",code).get();
+      const batch1 = db.batch();
+      runsSnap.forEach(doc=>batch1.delete(doc.ref));
+      await batch1.commit();
+
+      // Stabi-Sessions löschen
+      const stabiSnap = await db.collection("stabiSessions").where("playerCode","==",code).get();
+      const batch2 = db.batch();
+      stabiSnap.forEach(doc=>batch2.delete(doc.ref));
+      await batch2.commit();
+
+      // Spieler löschen
+      await db.collection("players").doc(code).delete();
+
+      msg.textContent = "Spieler " + code + " und zugehörige Einträge gelöscht.";
+      loadCoachView();
+    } catch(e){
+      console.error(e);
+      msg.textContent = "Fehler beim Löschen.";
+    }
+  }
+});
+
+/* ===== AUTO LOGIN FÜR SPIELER ===== */
 window.onload = ()=>{
   let saved = localStorage.getItem("panther_code");
   if(saved){

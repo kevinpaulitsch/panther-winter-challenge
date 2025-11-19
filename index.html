@@ -1453,14 +1453,20 @@ async function refreshDashboard(){
   let players = [];
   let teamKm = 0;
 
-  playersSnap.forEach(d=>{
-    let p = d.data();
-    if(p.xp === undefined) p.xp = 0;
-    if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
-    if(!p.avatarStyle) p.avatarStyle = "basic";
+ playersSnap.forEach(d=>{
+  let p = d.data();
+  if(p.xp === undefined) p.xp = 0;
+  if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
+  if(!p.avatarStyle) p.avatarStyle = "basic";
+
+  // Boss zählt NICHT in die Team-Kilometer
+  if (p.code !== "BOSS-77") {
     teamKm += p.totalKm || 0;
-    players.push(p);
-  });
+  }
+
+  players.push(p);
+});
+
 
   let me = players.find(p=>p.code===currentPlayer.code);
   if(me){ currentPlayer = me; }

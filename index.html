@@ -1534,28 +1534,35 @@ async function refreshDashboard() {
     console.warn("Fehler beim Laden suspicious:", e);
   }
 
-  players.forEach((p, i) => {
+  let rank = 1;
+players.forEach((p,i)=>{
+
+    // Boss nicht im Leaderboard anzeigen
+    if (p.code === "BOSS-77") return;
+
     const xpP = p.xp || 0;
     const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
 
     let styleEmoji = "";
-    if (p.avatarStyle === "silver") styleEmoji = "⚪ ";
-    if (p.avatarStyle === "gold") styleEmoji = "👑 ";
-    if (p.avatarStyle === "night") styleEmoji = "🌙 ";
+    if(p.avatarStyle === "silver") styleEmoji = "⚪ ";
+    if(p.avatarStyle === "gold") styleEmoji = "👑 ";
+    if(p.avatarStyle === "night") styleEmoji = "🌙 ";
 
     const yText = p.birthYear ? ` (JG ${p.birthYear}${p.group ? " · " + p.group : ""})` : "";
 
     let tr = document.createElement("tr");
-    if (p.code === currentPlayer.code) tr.classList.add("highlight-row");
+    if(p.code===currentPlayer.code) tr.classList.add("highlight-row");
+
     tr.innerHTML = `
-      <td>${i + 1}.</td>
-      <td>${styleEmoji}${p.name}${yText}${p.code === currentPlayer.code ? " 🐾" : ""}${suspiciousMark}</td>
-      <td>${(p.totalKm || 0).toFixed(1)}</td>
-      <td>${p.stabiCount || 0}</td>
+      <td>${rank++}.</td>
+      <td>${styleEmoji}${p.name}${yText}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
+      <td>${(p.totalKm||0).toFixed(1)}</td>
+      <td>${p.stabiCount||0}</td>
       <td>${xpP}</td>
     `;
     tbody.appendChild(tr);
-  });
+});
+
 
   // 🔥 Boss-Challenge nach dem Laden aller Spieler auswerten
   updateBossChallenge(players);

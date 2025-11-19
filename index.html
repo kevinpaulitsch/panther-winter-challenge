@@ -2030,21 +2030,19 @@ $("coachLoginBtn").onclick = () => {
   const msg = $("coachLoginMessage");
   msg.textContent = "";
 
-  // PIN prüfen
   if (!COACH_PINS.includes(pin)) {
     msg.textContent = "Falscher PIN.";
     return;
   }
 
-  // Name holen
   const name = prompt("Coach-Name für Anzeige (z.B. Kevin):") || "Coach";
   currentCoachName = name;
   $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
 
-  // sicher auf Coach-View umschalten
-  switchView("coachView");
+  hide("loginView");
+  hide("appView");
+  show("coachView");
 
-  // danach Daten laden (Fehler hier machen die View nicht mehr kaputt)
   loadCoachPlayers();
   loadChallengeCoach();
   loadTeamQuestCoach();
@@ -2052,9 +2050,10 @@ $("coachLoginBtn").onclick = () => {
 
 $("coachBackBtn").onclick = () => {
   currentCoachName = null;
-  switchView("loginView");
+  hide("coachView");
+  hide("appView");
+  show("loginView");
 };
-
 
 /* ===== COACH SPIELERLISTE ===== */
 async function loadCoachPlayers() {

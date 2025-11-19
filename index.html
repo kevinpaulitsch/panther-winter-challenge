@@ -1460,28 +1460,29 @@ function setupDuelEndInputLimits(){
 }
 
 /* ===== DASHBOARD ===== */
-async function refreshDashboard(){
+async function refreshDashboard() {
   const playersSnap = await db.collection("players").get();
   let players = [];
   let teamKm = 0;
 
- playersSnap.forEach(d=>{
-  let p = d.data();
-  if(p.xp === undefined) p.xp = 0;
-  if(p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
-  if(!p.avatarStyle) p.avatarStyle = "basic";
+  playersSnap.forEach(d => {
+    let p = d.data();
+    if (p.xp === undefined) p.xp = 0;
+    if (p.goalKm === undefined) p.goalKm = DEFAULT_GOAL;
+    if (!p.avatarStyle) p.avatarStyle = "basic";
 
-  // Boss zählt NICHT in die Team-Kilometer
-  if (p.code !== "BOSS-77") {
-    teamKm += p.totalKm || 0;
+    // Boss zählt NICHT in die Team-Kilometer
+    if (p.code !== "BOSS-77") {
+      teamKm += p.totalKm || 0;
+    }
+
+    players.push(p);
+  });
+
+  let me = players.find(p => p.code === currentPlayer.code);
+  if (me) {
+    currentPlayer = me;
   }
-
-  players.push(p);
-});
-
-
-  let me = players.find(p=>p.code===currentPlayer.code);
-  if(me){ currentPlayer = me; }
 
   const yearText = currentPlayer.birthYear ? ` · Jahrgang ${currentPlayer.birthYear}` : "";
   const groupText = currentPlayer.group ? ` · Gruppe ${currentPlayer.group}` : "";
@@ -1497,7 +1498,7 @@ async function refreshDashboard(){
 
   $("playerKm").textContent = km.toFixed(1);
   $("playerGoalKm").textContent = goal;
-  $("playerKmFill").style.width = Math.min(100, (km/goal)*100) + "%";
+  $("playerKmFill").style.width = Math.min(100, (km / goal) * 100) + "%";
 
   $("playerStabiCount").textContent = stabi;
   $("playerXp").textContent = xp;
@@ -1506,58 +1507,58 @@ async function refreshDashboard(){
 
   $("teamKm").textContent = teamKm.toFixed(1);
   $("teamGoalKm").textContent = TEAM_GOAL_KM;
-  $("teamKmFill").style.width = Math.min(100, (teamKm/TEAM_GOAL_KM)*100) + "%";
+  $("teamKmFill").style.width = Math.min(100, (teamKm / TEAM_GOAL_KM) * 100) + "%";
 
   $("personalGoalLabel").textContent = goal;
   $("personalGoalInput").value = goal;
 
-  players.sort((a,b)=> (b.totalKm||0) - (a.totalKm||0));
+  players.sort((a, b) => (b.totalKm || 0) - (a.totalKm || 0));
 
   let tbody = $("leaderboardBody");
   tbody.innerHTML = "";
 
   const suspiciousPlayers = new Set();
   try {
-    const runsSusp = await db.collection("runs").where("suspicious","==",true).get();
-    runsSusp.forEach(doc=>{
+    const runsSusp = await db.collection("runs").where("suspicious", "==", true).get();
+    runsSusp.forEach(doc => {
       const d = doc.data();
-      if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+      if (d.playerCode) suspiciousPlayers.add(d.playerCode);
     });
-    const stabiSusp = await db.collection("stabiSessions").where("suspicious","==",true).get();
-    stabiSusp.forEach(doc=>{
+    const stabiSusp = await db.collection("stabiSessions").where("suspicious", "==", true).get();
+    stabiSusp.forEach(doc => {
       const d = doc.data();
-      if(d.playerCode) suspiciousPlayers.add(d.playerCode);
+      if (d.playerCode) suspiciousPlayers.add(d.playerCode);
     });
-  } catch(e){
+  } catch (e) {
     console.warn("Fehler beim Laden suspicious:", e);
   }
 
-  players.forEach((p,i)=>{
+  players.forEach((p, i) => {
     const xpP = p.xp || 0;
     const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
 
     let styleEmoji = "";
-    if(p.avatarStyle === "silver") styleEmoji = "⚪ ";
-    if(p.avatarStyle === "gold") styleEmoji = "👑 ";
-    if(p.avatarStyle === "night") styleEmoji = "🌙 ";
+    if (p.avatarStyle === "silver") styleEmoji = "⚪ ";
+    if (p.avatarStyle === "gold") styleEmoji = "👑 ";
+    if (p.avatarStyle === "night") styleEmoji = "🌙 ";
 
     const yText = p.birthYear ? ` (JG ${p.birthYear}${p.group ? " · " + p.group : ""})` : "";
 
     let tr = document.createElement("tr");
-    if(p.code===currentPlayer.code) tr.classList.add("highlight-row");
+    if (p.code === currentPlayer.code) tr.classList.add("highlight-row");
     tr.innerHTML = `
-      <td>${i+1}.</td>
-      <td>${styleEmoji}${p.name}${yText}${p.code===currentPlayer.code?" 🐾":""}${suspiciousMark}</td>
-      <td>${(p.totalKm||0).toFixed(1)}</td>
-      <td>${p.stabiCount||0}</td>
+      <td>${i + 1}.</td>
+      <td>${styleEmoji}${p.name}${yText}${p.code === currentPlayer.code ? " 🐾" : ""}${suspiciousMark}</td>
+      <td>${(p.totalKm || 0).toFixed(1)}</td>
+      <td>${p.stabiCount || 0}</td>
       <td>${xpP}</td>
     `;
     tbody.appendChild(tr);
   });
 
-  // 🔥 NEU: Boss-Challenge anhand aller Spieler aktualisieren
+  // 🔥 Boss-Challenge nach dem Laden aller Spieler auswerten
   updateBossChallenge(players);
-  
+
   renderBadges(currentPlayer);
   renderAvatarOptions(currentPlayer);
   setupDuelEndInputLimits();
@@ -1573,11 +1574,10 @@ async function refreshDashboard(){
 
 // === Boss-Challenge auswerten ===
 function updateBossChallenge(players) {
-  // Falls das HTML-Element nicht existiert (z.B. Spieler-Ansicht), einfach abbrechen
+  // Wenn das HTML nicht vorhanden ist (z.B. Spieler-Ansicht), einfach abbrechen
   const box = $("bossChallengeBox");
   if (!box) return;
 
-  // Boss & Kinder trennen
   const boss = players.find(p => p.code === "BOSS-77");
   const kids = players.filter(p => p.code !== "BOSS-77");
 
@@ -1590,7 +1590,6 @@ function updateBossChallenge(players) {
 
   const bossKm = boss.totalKm || 0;
 
-  // Bestes Kind + Anzahl Kinder, die vor dem Boss liegen
   let bestKidKm = 0;
   let kidsAhead = 0;
 
@@ -1600,11 +1599,9 @@ function updateBossChallenge(players) {
     if (km > bossKm) kidsAhead++;
   });
 
-  // Zahlen ins HTML schreiben
   $("bossKmLabel").textContent = bossKm.toFixed(1);
   $("bossBestKidKmLabel").textContent = bestKidKm.toFixed(1);
 
-  // Status‐Text
   let status = "";
   if (kidsAhead === 0) {
     status = "Noch ist der Boss vorne 👑";
@@ -1616,8 +1613,9 @@ function updateBossChallenge(players) {
 
   $("bossStatusLabel").textContent = status;
 }
-  
+
 $("refreshBtn").onclick = refreshDashboard;
+
 
 /* ===== PERSÖNLICHES ZIEL SPEICHERN ===== */
 $("savePersonalGoalBtn").onclick = async ()=>{

@@ -2008,15 +2008,22 @@ $("coachLoginBtn").onclick = () => {
     msg.textContent = "Falscher PIN.";
     return;
   }
+
   const name = prompt("Coach-Name für Anzeige (z.B. Kevin):") || "Coach";
   currentCoachName = name;
   $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
+
+  // Views umschalten
   hide("loginView");
   hide("appView");
   show("coachView");
-  loadCoachPlayers();
-  loadChallengeCoach();
-  loadTeamQuestCoach();
+
+  // 🔥 DOM stabilisieren, dann laden
+  setTimeout(() => {
+    loadCoachPlayers();
+    loadChallengeCoach();
+    loadTeamQuestCoach();
+  }, 50);
 };
 
 $("coachBackBtn").onclick = () => {
@@ -2024,6 +2031,7 @@ $("coachBackBtn").onclick = () => {
   hide("coachView");
   show("loginView");
 };
+
 
 /* ===== COACH SPIELERLISTE ===== */
 async function loadCoachPlayers() {
@@ -2391,7 +2399,7 @@ async function saveAwardsForRange() {
       kmValue: lastEvalAwards.kmValue,
       kmStartDate: lastEvalAwards.startDate,
       kmEndDate: lastEvalAwards.endDate,
-      stabiTitle,
+      stabiTitle: stTitle,          // <- HIER: richtigen Namen verwenden
       stabiWinnerName: lastEvalAwards.stabiWinnerName,
       stabiValue: lastEvalAwards.stabiValue,
       stabiStartDate: lastEvalAwards.startDate,
@@ -2403,6 +2411,7 @@ async function saveAwardsForRange() {
     out.textContent = "Fehler beim Speichern.";
   }
 }
+
 /* ===== DUELLE (Coach) ===== */
 $("duelSaveBtn").onclick = async () => {
   const a = $("duelPlayerAInput").value.trim().toUpperCase();

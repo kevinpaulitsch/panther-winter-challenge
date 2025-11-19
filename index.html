@@ -930,7 +930,8 @@ const firebaseConfig = {
 
 const TEAM_GOAL_KM = 2800;
 const DEFAULT_GOAL = 85;
-
+const BOSS_PLAYER_CODE = "BOSS-77";
+  
 /* Challenge-Ende und Duell-Regeln */
 const CHALLENGE_END_DATE = "2026-02-09";
 const MAX_DUEL_DAYS = 7; // max. 7 Tage (0–6 Differenz)
@@ -1554,6 +1555,9 @@ async function refreshDashboard(){
     tbody.appendChild(tr);
   });
 
+  // 🔥 NEU: Boss-Challenge anhand aller Spieler aktualisieren
+  updateBossChallenge(players);
+  
   renderBadges(currentPlayer);
   renderAvatarOptions(currentPlayer);
   setupDuelEndInputLimits();
@@ -1567,6 +1571,52 @@ async function refreshDashboard(){
   await loadIncomingDuelsForPlayer();
 }
 
+// === Boss-Challenge auswerten ===
+function updateBossChallenge(players) {
+  // Falls das HTML-Element nicht existiert (z.B. Spieler-Ansicht), einfach abbrechen
+  const box = $("bossChallengeBox");
+  if (!box) return;
+
+  // Boss & Kinder trennen
+  const boss = players.find(p => p.code === "BOSS-77");
+  const kids = players.filter(p => p.code !== "BOSS-77");
+
+  if (!boss) {
+    $("bossKmLabel").textContent = "-";
+    $("bossBestKidKmLabel").textContent = "-";
+    $("bossStatusLabel").textContent = "Boss noch nicht eingetragen.";
+    return;
+  }
+
+  const bossKm = boss.totalKm || 0;
+
+  // Bestes Kind + Anzahl Kinder, die vor dem Boss liegen
+  let bestKidKm = 0;
+  let kidsAhead = 0;
+
+  kids.forEach(p => {
+    const km = p.totalKm || 0;
+    if (km > bestKidKm) bestKidKm = km;
+    if (km > bossKm) kidsAhead++;
+  });
+
+  // Zahlen ins HTML schreiben
+  $("bossKmLabel").textContent = bossKm.toFixed(1);
+  $("bossBestKidKmLabel").textContent = bestKidKm.toFixed(1);
+
+  // Status‐Text
+  let status = "";
+  if (kidsAhead === 0) {
+    status = "Noch ist der Boss vorne 👑";
+  } else if (kidsAhead === 1) {
+    status = "Ein Kind liegt vor dem Boss ✂️";
+  } else {
+    status = `${kidsAhead} Kinder liegen vor dem Boss ✂️`;
+  }
+
+  $("bossStatusLabel").textContent = status;
+}
+  
 $("refreshBtn").onclick = refreshDashboard;
 
 /* ===== PERSÖNLICHES ZIEL SPEICHERN ===== */

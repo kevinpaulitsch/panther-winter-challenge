@@ -1574,17 +1574,22 @@ async function refreshDashboard() {
 
 // === Boss-Challenge auswerten ===
 function updateBossChallenge(players) {
-  // Wenn das HTML nicht vorhanden ist (z.B. Spieler-Ansicht), einfach abbrechen
-  const box = $("bossChallengeBox");
-  if (!box) return;
+  // HTML-Elemente holen
+  const box          = $("bossChallengeBox");
+  const bossKmEl     = $("bossKmLabel");
+  const bestKidEl    = $("bossBestKidKmLabel");
+  const statusEl     = $("bossStatusLabel");
+
+  // Wenn irgendetwas davon fehlt (z.B. Spieler-Ansicht ohne Karte) -> sofort raus
+  if (!box || !bossKmEl || !bestKidEl || !statusEl) return;
 
   const boss = players.find(p => p.code === "BOSS-77");
   const kids = players.filter(p => p.code !== "BOSS-77");
 
   if (!boss) {
-    $("bossKmLabel").textContent = "-";
-    $("bossBestKidKmLabel").textContent = "-";
-    $("bossStatusLabel").textContent = "Boss noch nicht eingetragen.";
+    bossKmEl.textContent  = "-";
+    bestKidEl.textContent = "-";
+    statusEl.textContent  = "Boss noch nicht eingetragen.";
     return;
   }
 
@@ -1599,8 +1604,8 @@ function updateBossChallenge(players) {
     if (km > bossKm) kidsAhead++;
   });
 
-  $("bossKmLabel").textContent = bossKm.toFixed(1);
-  $("bossBestKidKmLabel").textContent = bestKidKm.toFixed(1);
+  bossKmEl.textContent     = bossKm.toFixed(1);
+  bestKidEl.textContent    = bestKidKm.toFixed(1);
 
   let status = "";
   if (kidsAhead === 0) {
@@ -1611,7 +1616,7 @@ function updateBossChallenge(players) {
     status = `${kidsAhead} Kinder liegen vor dem Boss ✂️`;
   }
 
-  $("bossStatusLabel").textContent = status;
+  statusEl.textContent = status;
 }
 
 $("refreshBtn").onclick = refreshDashboard;

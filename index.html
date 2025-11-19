@@ -713,7 +713,8 @@
   </div><!-- appView -->
 
   <!-- COACH-ADMIN-VIEW -->
-<div id="coachView">
+<div id="coachView" style="display:none;">
+
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="header-bar" style="margin-bottom:0;">
@@ -2004,35 +2005,36 @@ $("coachLoginBtn").onclick = () => {
   const msg = $("coachLoginMessage");
   msg.textContent = "";
 
+  // PIN prüfen
   if (!COACH_PINS.includes(pin)) {
     msg.textContent = "Falscher PIN.";
     return;
   }
 
+  // Name abfragen
   const name = prompt("Coach-Name für Anzeige (z.B. Kevin):") || "Coach";
   currentCoachName = name;
   $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
 
-  // TEST: Views nicht mehr umschalten
-  // hide("loginView");
-  // hide("appView");
-  // show("coachView");
+  // Views umschalten
+  hide("loginView");
+  hide("appView");
+  show("coachView");
 
-  // und auch:
-
-  // setTimeout(() => {
-  //   loadCoachPlayers();
-  //   loadChallengeCoach();
-  //   loadTeamQuestCoach();
-  // }, 50);
+  // Kurzer Delay, dann Coach-Daten laden
+  setTimeout(() => {
+    loadCoachPlayers();
+    loadChallengeCoach();
+    loadTeamQuestCoach();
+  }, 50);
 };
-
 
 $("coachBackBtn").onclick = () => {
   currentCoachName = null;
   hide("coachView");
   show("loginView");
 };
+
 
 
 /* ===== COACH SPIELERLISTE ===== */

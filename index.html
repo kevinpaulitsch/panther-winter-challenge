@@ -713,7 +713,7 @@
   </div><!-- appView -->
 
   <!-- COACH-ADMIN-VIEW -->
-  <div id="coachView" style="display:none;">
+<div id="coachView">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="header-bar" style="margin-bottom:0;">
@@ -1998,7 +1998,7 @@ async function loadTeamQuestCoach() {
 
 $("teamQuestLoadBtn").onclick = loadTeamQuestCoach;
 
-  /* ===== COACH-LOGIN ===== */
+ /* ===== COACH-LOGIN ===== */
 $("coachLoginBtn").onclick = () => {
   const pin = $("coachPin").value.trim();
   const msg = $("coachLoginMessage");
@@ -2013,18 +2013,20 @@ $("coachLoginBtn").onclick = () => {
   currentCoachName = name;
   $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
 
-  // Views umschalten
-  hide("loginView");
-  hide("appView");
-  show("coachView");
+  // TEST: Views nicht mehr umschalten
+  // hide("loginView");
+  // hide("appView");
+  // show("coachView");
 
-  // 🔥 DOM stabilisieren, dann laden
-  setTimeout(() => {
-    loadCoachPlayers();
-    loadChallengeCoach();
-    loadTeamQuestCoach();
-  }, 50);
+  // und auch:
+
+  // setTimeout(() => {
+  //   loadCoachPlayers();
+  //   loadChallengeCoach();
+  //   loadTeamQuestCoach();
+  // }, 50);
 };
+
 
 $("coachBackBtn").onclick = () => {
   currentCoachName = null;

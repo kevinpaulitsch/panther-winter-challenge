@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -383,7 +383,8 @@
       cursor:not-allowed;
     }
 
-    .duel-card {
+    .duel-card,
+    .duel-card-admin {
       padding:6px 8px;
       border-radius:10px;
       background:rgba(255,255,255,0.03);
@@ -401,15 +402,6 @@
       font-size:0.78rem;
     }
 
-    .duel-card-admin {
-      padding:6px 8px;
-      border-radius:10px;
-      background:rgba(255,255,255,0.03);
-      border:1px solid rgba(255,255,255,0.06);
-      margin-bottom:6px;
-      font-size:0.8rem;
-    }
-
     @media (max-width: 600px) {
       .header-title { font-size:1.15rem; }
       .logo { width:56px; }
@@ -420,14 +412,14 @@
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <!-- jsPDF für PDF-Reports -->
+  <!-- jsPDF (falls du später PDF brauchst) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
 <div class="app-container">
 
-    <!-- LOGIN VIEW -->
+  <!-- LOGIN VIEW -->
   <div id="loginView" class="card">
     <div class="header-bar">
       <img src="svtillmitsch-logo.png" alt="SV Tillmitsch Logo" class="logo">
@@ -522,21 +514,22 @@
       <div class="small-text">Badges werden automatisch anhand deiner Kilometer, Stabi-Einheiten und XP freigeschaltet.</div>
     </div>
 
-    <!-- Challenge -->
+        <!-- Challenge -->
     <div class="card">
       <h3>Aktuelle Challenge</h3>
-<div class="challengeCard">
-  <h3>Boss-Challenge 🧔⚔️</h3>
 
-<div id="bossChallengeBox" style="margin-top:10px;">
-  <h3>Boss-Challenge 🧔⚔️</h3>
-  <p><strong>Boss-Code:</strong> BOSS-77</p>
-  <p><strong>Kilometer Boss:</strong> <span id="bossKmLabel">0.0</span> km</p>
-  <p><strong>Bestes Kind:</strong> <span id="bossBestKidKmLabel">0.0</span> km</p>
-  <p><strong>Status:</strong> <span id="bossStatusLabel">Wird geladen …</span></p>
-</div>
- 
-      
+      <!-- Boss-Challenge Box -->
+      <div id="bossChallengeBox" style="margin-top:10px;">
+        <h3>Boss-Challenge 🧔⚔️</h3>
+        <p><strong>Boss-Code:</strong> BOSS-77</p>
+        <p><strong>Kilometer Boss:</strong> <span id="bossKmLabel">0.0</span> km</p>
+        <p><strong>Bestes Kind:</strong> <span id="bossBestKidKmLabel">0.0</span> km</p>
+        <p><strong>Status:</strong> <span id="bossStatusLabel">Wird geladen …</span></p>
+      </div>
+
+      <hr>
+
+      <!-- Normale Challenge -->
       <div id="challengeBox">
         <div id="challengeTitle" style="font-weight:600;">Keine Challenge aktiv</div>
         <div id="challengePeriod" class="small-text"></div>
@@ -590,7 +583,7 @@
       <div id="calendarGrid" class="calendar-grid"></div>
     </div>
 
-        <!-- Leaderboard -->
+    <!-- Leaderboard -->
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h3>Rangliste</h3>
@@ -711,9 +704,8 @@
     </div>
 
   </div><!-- appView -->
-
   <!-- COACH-ADMIN-VIEW -->
-<div id="coachView" style="display:none;">
+  <div id="coachView" style="display:none;">
 
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -766,7 +758,7 @@
         <div id="coachAwardSummary" class="small-text" style="margin-top:4px;"></div>
       </div>
 
-            <!-- Team Quest Config -->
+      <!-- Team Quest Config -->
       <div style="margin-bottom:12px;">
         <h3>Team Quest einstellen</h3>
         <p class="small-text">Gemeinsames Ziel für die gesamte Mannschaft (km oder Stabi). Wird allen Spielern angezeigt.</p>
@@ -797,7 +789,7 @@
             <input type="date" id="teamQuestEndInput">
           </div>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px%;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
           <button id="teamQuestSaveBtn" class="secondary small">Team Quest speichern</button>
           <button id="teamQuestLoadBtn" class="secondary small">Team Quest laden</button>
         </div>
@@ -918,7 +910,6 @@
   </div>
 
 </div><!-- container -->
-
 <script>
 /* ===== KONFIG ===== */
 const firebaseConfig = {
@@ -933,10 +924,10 @@ const firebaseConfig = {
 const TEAM_GOAL_KM = 2800;
 const DEFAULT_GOAL = 85;
 const BOSS_PLAYER_CODE = "BOSS-77";
-  
+
 /* Challenge-Ende und Duell-Regeln */
 const CHALLENGE_END_DATE = "2026-02-09";
-const MAX_DUEL_DAYS = 7; // max. 7 Tage (0–6 Differenz)
+const MAX_DUEL_DAYS = 7;
 const MAX_PENDING_DUELS_PER_PLAYER = 3;
 
 /* XP-System */
@@ -956,6 +947,7 @@ let currentEditPlayerName = null;
 let lastEvalAwards = null;
 
 const $ = id => document.getElementById(id);
+
 function show(id){
   const el = $(id);
   if (!el){
@@ -974,8 +966,7 @@ function hide(id){
   el.style.display = "none";
 }
 
-
- // Immer genau EINE View anzeigen
+// Immer genau EINE View
 function switchView(showId) {
   const views = ["loginView", "appView", "coachView"];
   views.forEach(id => {
@@ -984,16 +975,15 @@ function switchView(showId) {
     el.style.display = (id === showId) ? "" : "none";
   });
 }
- 
-  
-/* ===== Alt vs Jung: Gruppe aus Jahrgang ===== */
+
+/* Alt vs Jung: Gruppe aus Jahrgang */
 function groupFromYear(year){
-  if(year === 2012 || year === 2013) return "black"; // alt
-  if(year === 2014 || year === 2015) return "white"; // jung
+  if(year === 2012 || year === 2013) return "black";
+  if(year === 2014 || year === 2015) return "white";
   return null;
 }
 
-/* ===== Hilfsfunktionen Datum ===== */
+/* Datum-Helfer */
 function todayDateString(){
   return new Date().toISOString().slice(0,10);
 }
@@ -1011,14 +1001,14 @@ function daysBetweenStr(startStr, endStr){
   return daysBetween(a,b);
 }
 
-/* ===== XP-Tier ===== */
+/* XP-Tier */
 function getXpTier(xp){
   if(xp >= 800) return {emoji:"🟡", name:"Gold"};
   if(xp >= 300) return {emoji:"⚪", name:"Silber"};
   return {emoji:"🟤", name:"Bronze"};
 }
 
-  /* ===== PLAYER LOGIN ===== */
+/* PLAYER LOGIN */
 async function loginWithCode(){
   const code = $("loginCode").value.trim().toUpperCase();
   const msg  = $("loginMessage");
@@ -1091,8 +1081,7 @@ async function loginWithCode(){
     }
 
     localStorage.setItem("panther_code", code);
-
-       switchView("appView");
+    switchView("appView");
     await refreshDashboard();
 
   } catch(e){
@@ -1113,7 +1102,7 @@ $("logoutBtn").onclick = () => {
   location.reload();
 };
 
-/* ===== BADGES ===== */
+/* BADGES */
 function computeBadges(player){
   const km = player.totalKm || 0;
   const stabi = player.stabiCount || 0;
@@ -1150,7 +1139,7 @@ function renderBadges(player){
   });
 }
 
-/* ===== AVATAR / STYLES ===== */
+/* AVATAR / STYLES */
 function renderAvatarOptions(player){
   const container = $("avatarOptions");
   const info = $("avatarInfo");
@@ -1195,7 +1184,7 @@ function renderAvatarOptions(player){
   });
 }
 
-/* ===== STREAK & KALENDER ===== */
+/* STREAK & KALENDER */
 async function loadStreakAndCalendar(){
   const streakText = $("streakText");
   const bestStreakText = $("bestStreakText");
@@ -1331,7 +1320,7 @@ async function loadStreakAndCalendar(){
   }
 }
 
-/* ===== AUSZEICHNUNG SPIELER-SEITE ===== */
+/* AUSZEICHNUNG SPIELER-SEITE */
 async function loadAwardForPlayer(){
   const kmTitleEl = $("awardKmTitlePlayer");
   const kmSubEl = $("awardKmSubtitlePlayer");
@@ -1388,7 +1377,7 @@ async function loadAwardForPlayer(){
   }
 }
 
-/* ===== TEAM QUEST – SPIELER ===== */
+/* TEAM QUEST – SPIELER */
 async function loadTeamQuestForPlayer(){
   const titleEl = $("teamQuestTitle");
   const descEl = $("teamQuestDesc");
@@ -1463,7 +1452,7 @@ async function loadTeamQuestForPlayer(){
   }
 }
 
-/* ===== DUELL-ENDDATUM LIMITS (SPIELER) ===== */
+/* DUELL-ENDDATUM LIMITS (SPIELER) */
 function setupDuelEndInputLimits(){
   const input = $("duelEndPlayerInput");
   if(!input) return;
@@ -1486,7 +1475,7 @@ function setupDuelEndInputLimits(){
   }
 }
 
-/* ===== DASHBOARD ===== */
+/* DASHBOARD */
 async function refreshDashboard() {
   const playersSnap = await db.collection("players").get();
   let players = [];
@@ -1499,7 +1488,7 @@ async function refreshDashboard() {
     if (!p.avatarStyle) p.avatarStyle = "basic";
 
     // Boss zählt NICHT in die Team-Kilometer
-    if (p.code !== "BOSS-77") {
+    if (p.code !== BOSS_PLAYER_CODE) {
       teamKm += p.totalKm || 0;
     }
 
@@ -1561,10 +1550,10 @@ async function refreshDashboard() {
   }
 
   let rank = 1;
-players.forEach((p,i)=>{
+  players.forEach((p)=>{
 
     // Boss nicht im Leaderboard anzeigen
-    if (p.code === "BOSS-77") return;
+    if (p.code === BOSS_PLAYER_CODE) return;
 
     const xpP = p.xp || 0;
     const suspiciousMark = suspiciousPlayers.has(p.code) ? " ⚠" : "";
@@ -1587,10 +1576,9 @@ players.forEach((p,i)=>{
       <td>${xpP}</td>
     `;
     tbody.appendChild(tr);
-});
+  });
 
-
-  // 🔥 Boss-Challenge nach dem Laden aller Spieler auswerten
+  // Boss-Challenge aktualisieren
   updateBossChallenge(players);
 
   renderBadges(currentPlayer);
@@ -1606,19 +1594,17 @@ players.forEach((p,i)=>{
   await loadIncomingDuelsForPlayer();
 }
 
-// === Boss-Challenge auswerten ===
+/* Boss-Challenge */
 function updateBossChallenge(players) {
-  // HTML-Elemente holen
   const box          = $("bossChallengeBox");
   const bossKmEl     = $("bossKmLabel");
   const bestKidEl    = $("bossBestKidKmLabel");
   const statusEl     = $("bossStatusLabel");
 
-  // Wenn irgendetwas davon fehlt (z.B. Spieler-Ansicht ohne Karte) -> sofort raus
   if (!box || !bossKmEl || !bestKidEl || !statusEl) return;
 
-  const boss = players.find(p => p.code === "BOSS-77");
-  const kids = players.filter(p => p.code !== "BOSS-77");
+  const boss = players.find(p => p.code === BOSS_PLAYER_CODE);
+  const kids = players.filter(p => p.code !== BOSS_PLAYER_CODE);
 
   if (!boss) {
     bossKmEl.textContent  = "-";
@@ -1655,8 +1641,7 @@ function updateBossChallenge(players) {
 
 $("refreshBtn").onclick = refreshDashboard;
 
-
-/* ===== PERSÖNLICHES ZIEL SPEICHERN ===== */
+/* Pers. Ziel speichern */
 $("savePersonalGoalBtn").onclick = async ()=>{
   if(!currentPlayer) return;
   const val = parseFloat($("personalGoalInput").value || 0);
@@ -1676,7 +1661,7 @@ $("savePersonalGoalBtn").onclick = async ()=>{
   }
 };
 
-/* ===== LAUF SPEICHERN ===== */
+/* Lauf speichern */
 $("saveRunBtn").onclick = async () => {
   if (!currentPlayer) return;
   const date = $("runDate").value || todayDateString();
@@ -1726,6 +1711,7 @@ $("saveRunBtn").onclick = async () => {
   }
 };
 
+/* Stabi speichern */
 $("saveStabiBtn").onclick = async () => {
   if (!currentPlayer) return;
   const date = $("stabiDate").value || todayDateString();
@@ -1771,7 +1757,7 @@ $("saveStabiBtn").onclick = async () => {
   }
 };
 
-/* ===== TABS (Lauf / Stabi / Info) ===== */
+/* Tabs */
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;
@@ -1782,7 +1768,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-/* ===== ACTIVITY FEED ===== */
+/* Activity Feed */
 async function loadActivityFeed() {
   const container = $("activityFeed");
   container.innerHTML = "Lade Aktivitäten ...";
@@ -1863,7 +1849,7 @@ async function loadActivityFeed() {
 
 $("refreshFeedBtn").onclick = loadActivityFeed;
 
-/* ===== CHALLENGE (Coach & Spieler) ===== */
+/* CHALLENGE (Coach & Spieler) */
 async function saveChallenge() {
   const title = $("challengeTitleInput").value.trim();
   const targetKm = parseFloat($("challengeTargetKmInput").value || "0");
@@ -1966,7 +1952,7 @@ async function loadCurrentChallengeForPlayer() {
   }
 }
 
-/* ===== TEAM QUEST (Coach) ===== */
+/* TEAM QUEST (Coach) */
 async function saveTeamQuest() {
   const title = $("teamQuestTitleInput").value.trim();
   const desc = $("teamQuestDescInput").value.trim();
@@ -2024,7 +2010,7 @@ async function loadTeamQuestCoach() {
 
 $("teamQuestLoadBtn").onclick = loadTeamQuestCoach;
 
- /* ===== COACH-LOGIN ===== */
+/* COACH-LOGIN */
 $("coachLoginBtn").onclick = () => {
   const pin = $("coachPin").value.trim();
   const msg = $("coachLoginMessage");
@@ -2039,23 +2025,19 @@ $("coachLoginBtn").onclick = () => {
   currentCoachName = name;
   $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
 
-  hide("loginView");
-  hide("appView");
-  show("coachView");
-
+  switchView("coachView");
   loadCoachPlayers();
   loadChallengeCoach();
   loadTeamQuestCoach();
+  loadDuelsAdmin();
 };
 
 $("coachBackBtn").onclick = () => {
   currentCoachName = null;
-  hide("coachView");
-  hide("appView");
-  show("loginView");
+  switchView("loginView");
 };
 
-/* ===== COACH SPIELERLISTE ===== */
+/* COACH SPIELERLISTE */
 async function loadCoachPlayers() {
   const tbody = $("coachPlayersBody");
   const msg = $("coachActionMessage");
@@ -2150,7 +2132,7 @@ async function deletePlayer(code, name) {
   }
 }
 
-/* ===== EINTRÄGE PRO SPIELER (Coach) ===== */
+/* Einträge pro Spieler (Coach) */
 async function showPlayerEntries(code, name) {
   currentEditPlayerCode = code;
   currentEditPlayerName = name;
@@ -2262,7 +2244,7 @@ async function recalcPlayerAggregates(code) {
   });
 }
 
-/* ===== CSV-EXPORT ===== */
+/* CSV-Export */
 $("coachExportBtn").onclick = async () => {
   try {
     const snap = await db.collection("players").get();
@@ -2296,7 +2278,7 @@ $("coachExportBtn").onclick = async () => {
   }
 };
 
-/* ===== AUSWERTUNG ZEITRAUM & AWARDS ===== */
+/* AUSWERTUNG ZEITRAUM & AWARDS */
 $("evalRunBtn").onclick = runEvalForRange;
 $("saveAwardBtn").onclick = saveAwardsForRange;
 
@@ -2421,7 +2403,7 @@ async function saveAwardsForRange() {
       kmValue: lastEvalAwards.kmValue,
       kmStartDate: lastEvalAwards.startDate,
       kmEndDate: lastEvalAwards.endDate,
-      stabiTitle: stTitle,          // <- HIER: richtigen Namen verwenden
+      stabiTitle: stTitle,
       stabiWinnerName: lastEvalAwards.stabiWinnerName,
       stabiValue: lastEvalAwards.stabiValue,
       stabiStartDate: lastEvalAwards.startDate,
@@ -2434,7 +2416,7 @@ async function saveAwardsForRange() {
   }
 }
 
-/* ===== DUELLE (Coach) ===== */
+/* DUELLE (Coach) */
 $("duelSaveBtn").onclick = async () => {
   const a = $("duelPlayerAInput").value.trim().toUpperCase();
   const b = $("duelPlayerBInput").value.trim().toUpperCase();
@@ -2506,7 +2488,7 @@ async function loadDuelsAdmin() {
   }
 }
 
-/* ===== DUELLE (Spieler) – Gegnersliste ===== */
+/* DUELLE (Spieler) – Gegnersliste */
 async function loadPlayersForDuelSelect() {
   const sel = $("duelOpponentSelect");
   if (!currentPlayer) return;
@@ -2528,7 +2510,7 @@ async function loadPlayersForDuelSelect() {
   }
 }
 
-/* ===== DUELLE (Spieler) – Duell anlegen ===== */
+/* DUELLE (Spieler) – Duell anlegen */
 $("duelCreateBtn").onclick = async () => {
   if (!currentPlayer) return;
   const opponent = $("duelOpponentSelect").value;
@@ -2594,7 +2576,7 @@ $("duelCreateBtn").onclick = async () => {
   }
 };
 
-/* ===== DUELLE (Spieler) – Anfragen an dich ===== */
+/* DUELLE (Spieler) – Anfragen an dich */
 async function loadIncomingDuelsForPlayer() {
   const box = $("duelRequestsContainer");
   if (!currentPlayer) {
@@ -2652,7 +2634,7 @@ async function loadIncomingDuelsForPlayer() {
   }
 }
 
-/* ===== DUELLE (Spieler) – Übersicht & Fortschritt ===== */
+/* DUELLE (Spieler) – Übersicht & Fortschritt */
 async function loadDuelsForPlayer() {
   const box = $("duelContainer");
   if (!currentPlayer) {
@@ -2680,8 +2662,6 @@ async function loadDuelsForPlayer() {
     for (const dObj of duels) {
       const d = dObj.data;
       if (!["pending", "active", "finished"].includes(d.status)) continue;
-
-      const opponent = d.playerA === currentPlayer.code ? d.playerB : d.playerA;
 
       const [aStats, bStats] = await Promise.all([
         duelStatsForPlayer(d.playerA, d.type, d.startDate, d.endDate),
@@ -2739,21 +2719,19 @@ async function duelStatsForPlayer(code, type, start, end) {
   }
 }
 
-/* ===== AUTO-LOGIN BEI LADEN ===== */
+/* AUTO-LOGIN BEI LADEN */
 window.addEventListener("load", async () => {
   const saved = localStorage.getItem("panther_code");
   if (saved) {
     $("loginCode").value = saved;
     await loginWithCode();
   } else {
-    show("loginView");
+    switchView("loginView");
   }
   setupDuelEndInputLimits();
   loadDuelsAdmin();
 });
-  
 </script>
 
 </body>
 </html>
-  

@@ -2180,7 +2180,7 @@ async function showPlayerEntries(code, name) {
       return;
     }
 
-    for (const e of entries) {
+       for (const e of entries) {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${e.date || ""}</td>
@@ -2189,10 +2189,18 @@ async function showPlayerEntries(code, name) {
         <td>${e.comment}</td>
         <td>${e.suspicious ? "⚠" : ""}</td>
         <td>
+          <button class="entry-edit">Bearbeiten</button>
           <button class="entry-delete">Löschen</button>
         </td>
       `;
-      const delBtn = tr.querySelector(".entry-delete");
+
+      const editBtn = tr.querySelector(".entry-edit");
+      const delBtn  = tr.querySelector(".entry-delete");
+
+      // Eintrag bearbeiten
+      editBtn.onclick = () => editEntry(e);
+
+      // Eintrag löschen (dein bisheriger Code unverändert)
       delBtn.onclick = async () => {
         if (!confirm("Eintrag wirklich löschen?")) return;
         try {
@@ -2205,8 +2213,10 @@ async function showPlayerEntries(code, name) {
           alert("Fehler beim Löschen.");
         }
       };
+
       tbody.appendChild(tr);
     }
+
   } catch (e) {
     console.error(e);
     tbody.innerHTML = "<tr><td colspan='6'>Fehler beim Laden.</td></tr>";
@@ -2245,6 +2255,56 @@ async function recalcPlayerAggregates(code) {
   });
 }
 
+async function editEntry(entry) {
+  const isRun = entry.type === "run";
+
+  const newDate = prompt("Datum (JJJJ-MM-TT)", entry.date || todayDateString());
+  if (!newDate) return;
+
+  let newValueStr = prompt(
+    isRun ? "Kilometer (z.B. 4.5)" : "Runden (z.B. 1–3)",
+    String(entry.value)
+  );
+  if (newValueStr === null) return;
+
+  newValueStr = newValueStr.replace(",", ".");
+  const newValue = isRun ? parseFloat(newValueStr) : parseInt(newValueStr, 10);
+
+  if (!(newValue > 0)) {
+    alert("Wert muss > 0 sein.");
+    return;
+  }
+
+  const newCommentPrompt = prompt("Kommentar (optional)", entry.comment || "");
+  const newComment = newCommentPrompt === null ? (entry.comment || "") : newCommentPrompt;
+
+  const col = isRun ? "runs" : "stabiSessions";
+  const ref = db.collection(col).doc(entry.id);
+
+  const updateData = {
+    date: newDate,
+    comment: newComment
+  };
+
+  if (isRun) {
+    updateData.km = newValue;
+    updateData.suspicious = newValue > 25;
+  } else {
+    updateData.rounds = newValue;
+    updateData.suspicious = newValue > 3;
+  }
+
+  try {
+    await ref.update(updateData);
+    await recalcPlayerAggregates(currentEditPlayerCode);
+    await showPlayerEntries(currentEditPlayerCode, currentEditPlayerName);
+  } catch (e) {
+    console.error(e);
+    alert("Fehler beim Speichern der Änderung.");
+  }
+}
+  
+  
 /* CSV-Export */
 $("coachExportBtn").onclick = async () => {
   try {

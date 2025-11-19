@@ -956,9 +956,36 @@ let currentEditPlayerName = null;
 let lastEvalAwards = null;
 
 const $ = id => document.getElementById(id);
-function show(id){ $(id).style.display=""; }
-function hide(id){ $(id).style.display="none"; }
+function show(id){
+  const el = $(id);
+  if (!el){
+    console.warn("show(): Element nicht gefunden:", id);
+    return;
+  }
+  el.style.display = "";
+}
 
+function hide(id){
+  const el = $(id);
+  if (!el){
+    console.warn("hide(): Element nicht gefunden:", id);
+    return;
+  }
+  el.style.display = "none";
+}
+
+
+ // Immer genau EINE View anzeigen
+function switchView(showId) {
+  const views = ["loginView", "appView", "coachView"];
+  views.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.style.display = (id === showId) ? "" : "none";
+  });
+}
+ 
+  
 /* ===== Alt vs Jung: Gruppe aus Jahrgang ===== */
 function groupFromYear(year){
   if(year === 2012 || year === 2013) return "black"; // alt
@@ -1065,11 +1092,9 @@ async function loginWithCode(){
 
     localStorage.setItem("panther_code", code);
 
-    hide("loginView");
-    hide("coachView");
-    show("appView");
-
+       switchView("appView");
     await refreshDashboard();
+
   } catch(e){
     console.error(e);
     msg.textContent = "Fehler bei Anmeldung.";
@@ -2011,30 +2036,24 @@ $("coachLoginBtn").onclick = () => {
     return;
   }
 
-  // Name abfragen
+  // Name holen
   const name = prompt("Coach-Name für Anzeige (z.B. Kevin):") || "Coach";
   currentCoachName = name;
   $("coachNameLabel").textContent = `Eingeloggt als ${name}`;
 
-  // Views umschalten
-  hide("loginView");
-  hide("appView");
-  show("coachView");
+  // sicher auf Coach-View umschalten
+  switchView("coachView");
 
-  // Kurzer Delay, dann Coach-Daten laden
-  setTimeout(() => {
-    loadCoachPlayers();
-    loadChallengeCoach();
-    loadTeamQuestCoach();
-  }, 50);
+  // danach Daten laden (Fehler hier machen die View nicht mehr kaputt)
+  loadCoachPlayers();
+  loadChallengeCoach();
+  loadTeamQuestCoach();
 };
 
 $("coachBackBtn").onclick = () => {
   currentCoachName = null;
-  hide("coachView");
-  show("loginView");
+  switchView("loginView");
 };
-
 
 
 /* ===== COACH SPIELERLISTE ===== */

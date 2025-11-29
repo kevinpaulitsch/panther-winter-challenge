@@ -1266,11 +1266,11 @@ async function loadStreakAndCalendar(){
 // --- NEU: Feuer im Header anzeigen ---
     const headerStreakEl = $("headerStreak");
     if (headerStreakEl) {
-      if (currentStreak >= 3) {
-        // Ab 3 Tagen gibt es Feuer!
+      if (currentStreak >= 2) {
+        // Ab 2 Tagen gibt es Feuer!
         headerStreakEl.textContent = `🔥 ${currentStreak}`; 
       } else {
-        // Weniger als 3 Tage? Kein Feuer (leer).
+        // Weniger als 2 Tage? Kein Feuer (leer).
         headerStreakEl.textContent = ""; 
       }
     }
